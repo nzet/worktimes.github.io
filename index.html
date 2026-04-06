@@ -1,34 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Time Tracking App</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Polish Work Time Tracking Application</title>
 </head>
 <body>
-    <header>
-        <h1>Work Time Tracking Application</h1>
-    </header>
-    <main>
-        <section>
-            <h2>Log Your Work</h2>
-            <form id="work-log-form">
-                <label for="task">Task:</label>
-                <input type="text" id="task" name="task" required>
-                <label for="hours">Hours:</label>
-                <input type="number" id="hours" name="hours" required>
-                <button type="submit">Log Work</button>
-            </form>
-        </section>
-        <section id="log">
-            <h2>Logged Hours</h2>
-            <ul id="work-log-list"></ul>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2026 Work Time Tracking Application</p>
-    </footer>
-    <script src="script.js"></script>
+    <h1>Time Tracking Application</h1>
+
+    <form id="timeTrackingForm">
+        <label for="task">Task:</label>
+        <input type="text" id="task" name="task" required>
+        <br>
+        <label for="startTime">Start Time:</label>
+        <input type="datetime-local" id="startTime" name="startTime" required>
+        <br>
+        <label for="endTime">End Time:</label>
+        <input type="datetime-local" id="endTime" name="endTime" required>
+        <br>
+        <button type="submit">Save Record</button>
+    </form>
+
+    <div id="map" style="height: 400px; width: 100%;"></div>
+
+    <h2>Record History</h2>
+    <table id="recordHistory">
+        <tr>
+            <th>Task</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+        </tr>
+    </table>
+
+    <button id="exportExcel">Export to Excel</button>
+    <button id="backupJson">Backup to JSON</button>
+
+    <script>
+        // Initialize GPS Mapping
+        function initializeMap() {
+            // GPS mapping logic here
+        }
+
+        // Record History Display
+        function displayRecordHistory() {
+            // Logic to fetch and display records
+        }
+
+        // Excel Export Functionality
+        document.getElementById('exportExcel').addEventListener('click', function() {
+            // Logic to export records to Excel
+        });
+
+        // JSON Backup Functionality
+        document.getElementById('backupJson').addEventListener('click', function() {
+            // Logic to backup records to JSON
+        });
+
+        // Form Submission Logic
+        document.getElementById('timeTrackingForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            // Logic to save the record
+        });
+
+        initializeMap();
+        displayRecordHistory();
+    </script>
 </body>
 </html>
