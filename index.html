@@ -566,6 +566,7 @@ window.addEventListener('load', () => {
   updateStats();
   updateExportFilters();
   setExportDefaultDates();
+  document.getElementById('rec-count-setting').textContent = records.length;
 });
 
 // MAP
@@ -681,7 +682,7 @@ function saveRecord() {
   const worker = document.getElementById('worker').value;
   const contract = document.getElementById('contract').value;
   if(!worker||!contract) { showToast('Wybierz pracownika i kontrakt','error'); return; }
-  // --- ГОЛОВНА ВИПРАВЛЕНА УМОВА:
+  // Треба мати хоча б одну повну пару (dojazd або praca)
   if(!(times.d1 && times.d2) && !(times.w1 && times.w2)) {
     showToast('Zarejestruj co najmniej jeden pełny czas (dojazd lub praca)','error'); return;
   }
@@ -730,10 +731,7 @@ function resetForm() {
   setActiveTimeButton();
 }
 
-// --- ВСІ ІНШІ ФУНКЦІЇ (renderRecords, updateStats, openRecordModal, ... належать до рекордів, статистики, імпорту/експорту, навігації) ---
-// --- Ви можете залишити їх такими, як вони у вас працюють, бо вони не залежать від логіки кнопок часу/маршруту ---
-
-// Подальший код без змін:
+// NAV / PAGES
 const navTitles = {form:'Nowy wpis', records:'Historia', export:'Eksport', settings:'Ustawienia'};
 const navSubs = {form:'Ewidencja czasu pracy', records:'Zapisane wpisy', export:'Pobierz dane', settings:'Konfiguracja'};
 function showPage(name) {
@@ -753,6 +751,8 @@ function navAction() {
   if(currentPage==='form') resetForm();
   else if(currentPage==='records') renderRecords();
 }
+
+// UTILS
 function minDiff(t1,t2) {
   if(!t1||!t2) return null;
   const [h1,m1]=t1.split(':').map(Number),[h2,m2]=t2.split(':').map(Number);
@@ -768,7 +768,316 @@ function showToast(msg, type='') {
   setTimeout(()=>t.className='toast', 2500);
 }
 
-// --- решта ваших існуючих функцій (renderRecords, updateStats, openRecordModal, ... інше) без змін! ---
+// RECORDS LIST & MODAL
+function renderRecords() {
+  const list = document.getElementById('rec-list');
+  if(!records.length) {
+    list.innerHTML = `
+      <div class="no-records">
+        <div class="no-records-icon">🗂️</div>
+        <div class="no-records-text">Brak zapisanych wpisów</div>
+      </div>`;
+    return;
+  }
+  list.innerHTML = records.map(r=>{
+    return `
+      <div class="rec-item" onclick="openRecordModal('${r.id}')">
+        <div class="rec-date">${r.date} • ${r.worker}</div>
+        <div class="rec-badges">
+          <span class="badge badge-blue">${r.contract}</span>
+          ${r.car ? `<span class="badge badge-amber">${r.car}</span>` : ''}
+          ${(r.commuteMin ? `<span class="badge badge-green">Dojazd ${fmtMin(r.commuteMin)}</span>`:'')}
+          ${(r.workMin ? `<span class="badge badge-green">Praca ${fmtMin(r.workMin)}</span>`:'')}
+        </div>
+        <div class="rec-times">
+          ${r.td1 && r.td2 ? `<div class="rec-time-item">Dojazd: <b>${r.td1}</b> → <b>${r.td2}</b></div>` : ''}
+          ${r.tw1 && r.tw2 ? `<div class="rec-time-item">Praca: <b>${r.tw1}</b> → <b>${r.tw2}</b></div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+function openRecordModal(id) {
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return;
+  modalRecordId = id;
+  const body = document.getElementById('rec-modal-body');
+  body.innerHTML = `
+    <div class="section-title">Informacje podstawowe</div>
+    <div class="list-item"><div class="list-item-text">Data</div><div>${rec.date}</div></div>
+    <div class="list-item"><div class="list-item-text">Pracownik</div><div>${rec.worker}</div></div>
+    <div class="list-item"><div class="list-item-text">Kontrakt</div><div>${rec.contract}</div></div>
+    <div class="section-title">Transport</div>
+    <div class="list-item"><div class="list-item-text">Kierowca</div><div>${rec.driver||'—'}</div></div>
+    <div class="list-item"><div class="list-item-text">Pojazd</div><div>${rec.car||'—'}</div></div>
+    <div class="list-item"><div class="list-item-text">Pasażerowie</div><div>${rec.passengers||'—'}</div></div>
+    <div class="section-title">Czas</div>
+    <div class="list-item"><div class="list-item-text">Dojazd</div><div>${rec.td1&&rec.td2?rec.td1+' → '+rec.td2:'—'}</div></div>
+    <div class="list-item"><div class="list-item-text">Praca</div><div>${rec.tw1&&rec.tw2?rec.tw1+' → '+rec.tw2:'—'}</div></div>
+    <div class="list-item"><div class="list-item-text">Łącznie dojazd</div><div>${fmtMin(rec.commuteMin)}</div></div>
+    <div class="list-item"><div class="list-item-text">Łącznie praca</div><div>${fmtMin(rec.workMin)}</div></div>
+  `;
+  document.getElementById('rec-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('rec-modal').classList.remove('open');
+  modalRecordId = null;
+}
+function deleteCurrentRecord() {
+  if(!modalRecordId) return;
+  if(!confirm('Usunąć ten wpis?')) return;
+  records = records.filter(r=>r.id!==modalRecordId);
+  saveRecords();
+  document.getElementById('rec-count-setting').textContent = records.length;
+  closeModal();
+  renderRecords();
+  updateStats();
+}
+
+// STATS
+function updateStats() {
+  const wrap = document.getElementById('stats-grid');
+  if(!records.length) { wrap.innerHTML=''; return; }
+  let totalWork = 0, totalCommute = 0;
+  records.forEach(r=>{
+    if(r.workMin) totalWork += r.workMin;
+    if(r.commuteMin) totalCommute += r.commuteMin;
+  });
+  wrap.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Czas pracy</div>
+      <div class="stat-value">${fmtMin(totalWork)}</div>
+      <div class="stat-unit">Suma wszystkich wpisów</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Czas dojazdu</div>
+      <div class="stat-value">${fmtMin(totalCommute)}</div>
+      <div class="stat-unit">Suma wszystkich wpisów</div>
+    </div>`;
+}
+
+// SETTINGS LISTS
+function renderSettingsLists() {
+  // workers
+  const wlist = document.getElementById('workers-list');
+  wlist.innerHTML = config.workers.map(w=>`
+    <div class="list-item">
+      <div class="list-item-text">${w}</div>
+      <button class="list-item-remove" onclick="removeWorker('${w}')">×</button>
+    </div>`).join('') || '<div class="no-records-text">Brak pracowników</div>';
+
+  // cars
+  const clist = document.getElementById('cars-list');
+  clist.innerHTML = config.cars.map(c=>`
+    <div class="list-item">
+      <div class="list-item-text">${c}</div>
+      <button class="list-item-remove" onclick="removeCar('${c}')">×</button>
+    </div>`).join('') || '<div class="no-records-text">Brak pojazdów</div>';
+
+  // contracts
+  const colist = document.getElementById('contracts-list');
+  colist.innerHTML = config.contracts.map(c=>`
+    <div class="list-item">
+      <div class="list-item-text">${c}</div>
+      <button class="list-item-remove" onclick="removeContract('${c}')">×</button>
+    </div>`).join('') || '<div class="no-records-text">Brak kontraktów</div>';
+}
+function addWorker() {
+  const val = document.getElementById('new-worker').value.trim();
+  if(!val) return;
+  if(!config.workers.includes(val)) {
+    config.workers.push(val);
+    saveConfig();
+    document.getElementById('new-worker').value='';
+    renderSettingsLists();
+    populateSelects();
+    populateChips();
+  }
+}
+function removeWorker(name) {
+  config.workers = config.workers.filter(w=>w!==name);
+  saveConfig();
+  renderSettingsLists();
+  populateSelects();
+  populateChips();
+}
+function addCar() {
+  const val = document.getElementById('new-car').value.trim();
+  if(!val) return;
+  if(!config.cars.includes(val)) {
+    config.cars.push(val);
+    saveConfig();
+    document.getElementById('new-car').value='';
+    renderSettingsLists();
+    populateSelects();
+  }
+}
+function removeCar(name) {
+  config.cars = config.cars.filter(c=>c!==name);
+  saveConfig();
+  renderSettingsLists();
+  populateSelects();
+}
+function addContract() {
+  const val = document.getElementById('new-contract').value.trim();
+  if(!val) return;
+  if(!config.contracts.includes(val)) {
+    config.contracts.push(val);
+    saveConfig();
+    document.getElementById('new-contract').value='';
+    renderSettingsLists();
+    populateSelects();
+  }
+}
+function removeContract(name) {
+  config.contracts = config.contracts.filter(c=>c!==name);
+  saveConfig();
+  renderSettingsLists();
+  populateSelects();
+}
+
+// SETTINGS TOGGLES
+function applySettingToggles() {
+  document.getElementById('toggle-gps').classList.toggle('on', !!config.autoGps);
+  document.getElementById('toggle-confirm').classList.toggle('on', !!config.confirmSave);
+}
+function toggleSetting(key, btn) {
+  config[key] = !config[key];
+  btn.classList.toggle('on', config[key]);
+  saveConfig();
+}
+
+// CLEAR ALL
+function clearAllRecords() {
+  if(!records.length) return;
+  if(!confirm('Usunąć wszystkie wpisy?')) return;
+  records = [];
+  saveRecords();
+  renderRecords();
+  updateStats();
+  document.getElementById('rec-count-setting').textContent = '0';
+}
+
+// EXPORT / IMPORT
+function setExportDefaultDates() {
+  if(!records.length) return;
+  const dates = records.map(r=>r.date).filter(Boolean).sort();
+  const from = dates[0], to = dates[dates.length-1];
+  document.getElementById('exp-from').value = from;
+  document.getElementById('exp-to').value = to;
+}
+function updateExportFilters() {
+  const wsel = document.getElementById('exp-worker');
+  const csel = document.getElementById('exp-contract');
+  const wVal = wsel.value, cVal = csel.value;
+  wsel.innerHTML = '<option value="">Wszyscy</option>' +
+    Array.from(new Set(config.workers)).map(w=>`<option value="${w}">${w}</option>`).join('');
+  csel.innerHTML = '<option value="">Wszystkie</option>' +
+    Array.from(new Set(config.contracts)).map(c=>`<option value="${c}">${c}</option>`).join('');
+  wsel.value = wVal;
+  csel.value = cVal;
+}
+function getFilteredRecordsForExport() {
+  const from = document.getElementById('exp-from').value;
+  const to = document.getElementById('exp-to').value;
+  const w = document.getElementById('exp-worker').value;
+  const c = document.getElementById('exp-contract').value;
+  return records.filter(r=>{
+    if(from && r.date < from) return false;
+    if(to && r.date > to) return false;
+    if(w && r.worker !== w) return false;
+    if(c && r.contract !== c) return false;
+    return true;
+  });
+}
+function updateExpCount() {
+  const filtered = getFilteredRecordsForExport();
+  document.getElementById('exp-count').textContent = 'Wpisów do eksportu: '+filtered.length;
+}
+document.getElementById('exp-from').addEventListener('change', updateExpCount);
+document.getElementById('exp-to').addEventListener('change', updateExpCount);
+document.getElementById('exp-worker').addEventListener('change', updateExpCount);
+document.getElementById('exp-contract').addEventListener('change', updateExpCount);
+
+function exportExcel() {
+  const rows = getFilteredRecordsForExport();
+  if(!rows.length) { showToast('Brak danych do eksportu','error'); return; }
+  const data = rows.map(r=>({
+    Data: r.date,
+    Pracownik: r.worker,
+    Kontrakt: r.contract,
+    Kierowca: r.driver || '',
+    Pojazd: r.car || '',
+    Pasażerowie: r.passengers || '',
+    'Początek dojazdu': r.td1 || '',
+    'Koniec dojazdu': r.td2 || '',
+    'Początek pracy': r.tw1 || '',
+    'Koniec pracy': r.tw2 || '',
+    'Minuty dojazdu': r.commuteMin ?? '',
+    'Minuty pracy': r.workMin ?? '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Ewidencja");
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const blob = new Blob([wbout], {type:'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const now = new Date().toISOString().split('T')[0];
+  a.download = `ewidencja_${now}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  showToast('Eksport XLSX gotowy','success');
+}
+
+function exportJSON() {
+  const payload = {config, records};
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const now = new Date().toISOString().split('T')[0];
+  a.download = `ewidencja_backup_${now}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  showToast('Kopia JSON zapisana','success');
+}
+
+function importJSON() {
+  document.getElementById('json-import').click();
+}
+function handleImport(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const obj = JSON.parse(ev.target.result);
+      if(obj.config) config = obj.config;
+      if(Array.isArray(obj.records)) records = obj.records;
+      saveConfig();
+      saveRecords();
+      populateSelects();
+      populateChips();
+      renderSettingsLists();
+      applySettingToggles();
+      renderRecords();
+      updateStats();
+      setExportDefaultDates();
+      updateExportFilters();
+      updateExpCount();
+      document.getElementById('rec-count-setting').textContent = records.length;
+      showToast('Kopia JSON wczytana','success');
+    }catch(err){
+      console.error(err);
+      showToast('Błąd przy wczytywaniu JSON','error');
+    }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
 </script>
 </body>
 </html>
