@@ -681,11 +681,17 @@ function togglePass(name, el) {
 function saveRecord() {
   const worker = document.getElementById('worker').value;
   const contract = document.getElementById('contract').value;
-  if(!worker||!contract) { showToast('Wybierz pracownika i kontrakt','error'); return; }
- // Дозволити, якщо є хоч один час (будь-який з чотирьох)
-if(!(times.d1 || times.d2 || times.w1 || times.w2)) {
-  showToast('Zarejestruj co najmniej jeden czas','error'); return;
-}
+  if(!worker||!contract) {
+    showToast('Wybierz pracownika i kontrakt','error'); 
+    return;
+  }
+
+  // Дозволити запис, якщо є хоч один час: d1, d2, w1 або w2
+  if(!(times.d1 || times.d2 || times.w1 || times.w2)) {
+    showToast('Zarejestruj co najmniej jeden czas','error');
+    return;
+  }
+
   const rec = {
     id: Date.now().toString(),
     date: document.getElementById('workdate').value,
