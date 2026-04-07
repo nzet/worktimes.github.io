@@ -604,58 +604,104 @@ function exportExcel() { /* kod bez zmian – jak w poprzedniej wersji */
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ewidencja");
   XLSX.writeFile(wb, `ewidencja_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-function exportJSON() { if(!records.length) return alert('Brak danych'); const blob = new Blob([JSON.stringify(records,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`backup_ewidencja_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); }
-function importJSON() { document.getElementById('json-import').click(); }
-function handleImport(e) {
-  const file = e.target.files[0]; if(!file) return;
+function exportJSON() { 
+  if(!records.length) return alert('Brak danych'); 
+  const blob = new Blob([JSON.stringify(records, null, 2)], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_ewidencja_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  document.getElementById('json-import').click();
+}
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = function(e) {
     try {
-      const imported = JSON.parse(ev.target.result);
-      if(Array.isArray(imported)) {
-        records = [...records, ...imported];
+      const importedData = JSON.parse(e.target.result);
+      if (Array.isArray(importedData)) {
+        records = importedData;
         saveToStorage();
-        alert(`✅ Zaimportowano ${imported.length} wpisów!`);
-        e.target.value = '';
-        if(document.getElementById('page-records').classList.contains('active')) { loadRecords(); loadStats(); }
+        updateExportInfo();
+        alert('✅ Pomyślnie zaimportowano dane!');
+      } else {
+        alert('❌ Błędny format pliku. Oczekiwano tablicy wpisów.');
       }
-    } catch(err) { alert('❌ Błąd pliku JSON'); }
+    } catch (err) {
+      alert('❌ Błąd podczas odczytu pliku JSON.');
+    }
+    event.target.value = ''; // Reset inputu
   };
   reader.readAsText(file);
 }
 
-// ======================= NAWIGACJA =======================
-function showPage(p) {
-  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
-  document.getElementById('page-' + p).classList.add('active');
-  document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
-  document.getElementById('tab-' + p).classList.add('active');
-
-  if (p === 'records') { loadRecords(); loadStats(); }
-  else if (p === 'settings') { renderWorkersList(); renderCarsList(); renderContractsList(); }
-  else if (p === 'export') { updateExportInfo(); }
-  else if (p === 'form') { loadDraft(); renderPassengerChips(); }   // ← wczytujemy draft przy wejściu na formularz
+// ======================= NAWIGACJA (TABS) =======================
+function showPage(pageId) {
+  // Ukryj wszystkie strony
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  
+  // Pokaż wybraną
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.getElementById('tab-' + pageId).classList.add('active');
+  
+  // Zmiana tytułu
+  const titles = {
+    'form': 'Nowy wpis',
+    'records': 'Historia wpisów',
+    'export': 'Eksport danych',
+    'settings': 'Ustawienia'
+  };
+  document.getElementById('nav-title').textContent = titles[pageId] || 'Ewidencja';
+  
+  // Akcje specyficzne dla stron
+  if (pageId === 'records') {
+    loadRecords();
+    loadStats();
+  } else if (pageId === 'export') {
+    updateExportInfo();
+  } else if (pageId === 'settings') {
+    renderWorkersList();
+    renderCarsList();
+    renderContractsList();
+  } else if (pageId === 'form') {
+    // Naprawa błędu renderowania mapy w ukrytym divie
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 100);
+    }
+  }
 }
 
-function navAction() { alert('🔧 Akcja PRO'); }
+function navAction() {
+  alert('Wersja PRO: ' + records.length + ' wpisów w bazie.');
+}
 
-// ======================= START =======================
-loadData();
-populateSelects();
-initTimeBlocks();
-initMap();
+// ======================= INIT (URUCHOMIENIE) =======================
+window.onload = () => {
+  loadData();
+  populateSelects();
+  initTimeBlocks();
+  renderPassengerChips();
+  initMap();
+  loadDraft(); // Wczytywanie niezapisanego wpisu
 
-document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
+  // Ustawienie dzisiejszej daty domyślnie, jeśli draft jej nie nadpisał
+  if (!document.getElementById('workdate').value) {
+    document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
+  }
 
-const today = new Date().toISOString().split('T')[0];
-const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-document.getElementById('exp-from').value = thirtyDaysAgo;
-document.getElementById('exp-to').value = today;
-
-loadDraft();           // ← automatycznie wczytuje ostatni niedokończony wpis
-renderPassengerChips();
-
-console.log('%c✅ Ewidencja PRO – historia w jednej kolumnie + kontynuacja wpisu po zamknięciu przeglądarki', 'color:#22c55e;font-weight:600');
+  // Automatyczny zapis draftu przy zmianie jakiegokolwiek pola w formularzu
+  document.querySelectorAll('#page-form input, #page-form select').forEach(el => {
+    el.addEventListener('change', saveDraft);
+  });
+};
 </script>
 </body>
 </html>
