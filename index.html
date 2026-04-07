@@ -87,6 +87,10 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
 .export-info{font-size:13px;color:var(--text3);background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;margin:16px 0;}
 .duration-badge{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);padding:4px 10px;border-radius:9999px;font-size:13px;font-weight:600;}
 .storage-warning{background:#f59e0b;color:#0f172a;padding:10px 16px;border-radius:8px;font-size:13px;text-align:center;margin:8px 16px 0;display:none;}
+/* НОВА СТИЛЬ ДЛЯ ІСТОРІЇ (одна колонка) */
+.time-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.time-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:14px;}
+.time-row span:first-child{font-weight:500;color:var(--text2);}
 </style>
 </head>
 <body>
@@ -244,31 +248,23 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 //===========================
-// Ewidencja PRO – PEŁNY KOD Z NAPRAWIONYM localStorage (SecurityError)
+// Ewidencja PRO – PEŁNY KOD Z NOWYMI ŻĄDANIAMI
+// 1. Historia: czasy w JEDNEJ kolumnie (pionowa lista)
+// 2. Kontynuacja wpisu po zamknięciu przeglądarki (draft zapisywany)
 //===========================
 
-// === BEZPIECZNE STORAGE (działa w sandbox/iframe) ===
+// === BEZPIECZNE STORAGE ===
 const safeStorage = {
-  getItem(key) {
-    try { return localStorage.getItem(key); } catch(e) { return null; }
-  },
-  setItem(key, value) {
-    try { localStorage.setItem(key, value); } catch(e) {
-      console.warn('localStorage zablokowany – dane tylko w pamięci');
-    }
-  }
+  getItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } },
+  setItem(key, value) { try { localStorage.setItem(key, value); } catch(e) { console.warn('localStorage zablokowany'); } }
 };
 
 let isStorageAvailable = true;
 try {
   localStorage.setItem('__test', '1');
   localStorage.removeItem('__test');
-} catch(e) {
-  isStorageAvailable = false;
-}
-if (!isStorageAvailable) {
-  document.getElementById('storage-warning').style.display = 'block';
-}
+} catch(e) { isStorageAvailable = false; }
+if (!isStorageAvailable) document.getElementById('storage-warning').style.display = 'block';
 
 // === GLOBALNE ZMIENNE ===
 let times = {};
@@ -278,6 +274,7 @@ let workers = [];
 let cars = [];
 let contracts = [];
 let records = [];
+let currentDraft = null;   // ← nowy draft (kontynuacja wpisu)
 
 const timeBlocks = [
   {id:'start_drive', label:'Start dojazdu', color:'#3b82f6'},
@@ -289,15 +286,79 @@ const timeBlocks = [
 let map;
 const markers = {};
 
-// ======================= POMOCNICZE FUNKCJE =======================
+// ======================= DRAFT (kontynuacja po zamknięciu przeglądarki) =======================
+function saveDraft() {
+  currentDraft = {
+    worker: document.getElementById('worker').value,
+    contract: document.getElementById('contract').value,
+    driver: document.getElementById('driver').value,
+    car: document.getElementById('car').value,
+    workdate: document.getElementById('workdate').value,
+    passengers: [...selectedPassengers],
+    times: {},
+    geos: {...geos}
+  };
+  Object.keys(times).forEach(k => {
+    currentDraft.times[k] = times[k] ? times[k].toISOString() : null;
+  });
+  safeStorage.setItem('currentDraft', JSON.stringify(currentDraft));
+}
+
+function loadDraft() {
+  const saved = safeStorage.getItem('currentDraft');
+  if (!saved) return;
+  currentDraft = JSON.parse(saved);
+
+  // przywróć pola formularza
+  if (currentDraft.worker) document.getElementById('worker').value = currentDraft.worker;
+  if (currentDraft.contract) document.getElementById('contract').value = currentDraft.contract;
+  if (currentDraft.driver) document.getElementById('driver').value = currentDraft.driver;
+  if (currentDraft.car) document.getElementById('car').value = currentDraft.car;
+  if (currentDraft.workdate) document.getElementById('workdate').value = currentDraft.workdate;
+
+  selectedPassengers = currentDraft.passengers || [];
+  times = {};
+  geos = currentDraft.geos || {};
+
+  // przywróć czasy
+  Object.keys(currentDraft.times || {}).forEach(k => {
+    if (currentDraft.times[k]) {
+      times[k] = new Date(currentDraft.times[k]);
+      const el = document.getElementById(k + '-time');
+      if (el) {
+        el.textContent = times[k].toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        el.classList.add('set');
+      }
+    }
+  });
+
+  // przywróć geo (tylko tekst + znaczniki na mapie)
+  Object.keys(geos).forEach(id => {
+    const geoPill = document.getElementById(id + '-geo');
+    if (geoPill) {
+      geoPill.textContent = `${geos[id][0].toFixed(5)}, ${geos[id][1].toFixed(5)}`;
+      geoPill.className = 'geo-pill ok';
+    }
+    if (map && markers[id]) map.removeLayer(markers[id]);
+    const tb = timeBlocks.find(t => t.id === id);
+    if (map && tb) {
+      markers[id] = L.circleMarker(geos[id], {color: tb.color, radius: 8}).addTo(map).bindPopup(tb.label);
+    }
+  });
+
+  renderPassengerChips();
+}
+
+function clearDraft() {
+  currentDraft = null;
+  safeStorage.setItem('currentDraft', 'null');
+}
+
+// ======================= POMOCNICZE =======================
 function calculateDurations(rec) {
   let drive = 0, work = 0;
-  if (rec.times.start_drive && rec.times.end_drive) {
-    drive = (new Date(rec.times.end_drive) - new Date(rec.times.start_drive)) / (1000*60*60);
-  }
-  if (rec.times.start_work && rec.times.end_work) {
-    work = (new Date(rec.times.end_work) - new Date(rec.times.start_work)) / (1000*60*60);
-  }
+  if (rec.times.start_drive && rec.times.end_drive) drive = (new Date(rec.times.end_drive) - new Date(rec.times.start_drive)) / (1000*60*60);
+  if (rec.times.start_work && rec.times.end_work) work = (new Date(rec.times.end_work) - new Date(rec.times.start_work)) / (1000*60*60);
   return { drive: drive.toFixed(2), work: work.toFixed(2) };
 }
 
@@ -308,7 +369,7 @@ function saveToStorage() {
   safeStorage.setItem('records', JSON.stringify(records));
 }
 
-// ======================= ŁADOWANIE DANYCH =======================
+// ======================= ŁADOWANIE =======================
 function loadData() {
   workers = JSON.parse(safeStorage.getItem('workers') || '[]');
   cars = JSON.parse(safeStorage.getItem('cars') || '[]');
@@ -317,23 +378,12 @@ function loadData() {
 }
 
 function populateSelects() {
-  let sel = document.getElementById('worker');
-  sel.innerHTML = '<option value="">— wybierz —</option>' + workers.map(w => `<option value="${w}">${w}</option>`).join('');
-  
-  sel = document.getElementById('driver');
-  sel.innerHTML = '<option value="">— wybierz —</option>' + workers.map(w => `<option value="${w}">${w}</option>`).join('');
-  
-  sel = document.getElementById('contract');
-  sel.innerHTML = '<option value="">— wybierz —</option>' + contracts.map(c => `<option value="${c}">${c}</option>`).join('');
-  
-  sel = document.getElementById('car');
-  sel.innerHTML = '<option value="">— wybierz —</option>' + cars.map(c => `<option value="${c}">${c}</option>`).join('');
-  
-  sel = document.getElementById('exp-worker');
-  sel.innerHTML = '<option value="">Wszyscy</option>' + workers.map(w => `<option value="${w}">${w}</option>`).join('');
-  
-  sel = document.getElementById('exp-contract');
-  sel.innerHTML = '<option value="">Wszystkie</option>' + contracts.map(c => `<option value="${c}">${c}</option>`).join('');
+  let sel = document.getElementById('worker'); sel.innerHTML = '<option value="">— wybierz —</option>' + workers.map(w => `<option value="${w}">${w}</option>`).join('');
+  sel = document.getElementById('driver'); sel.innerHTML = '<option value="">— wybierz —</option>' + workers.map(w => `<option value="${w}">${w}</option>`).join('');
+  sel = document.getElementById('contract'); sel.innerHTML = '<option value="">— wybierz —</option>' + contracts.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel = document.getElementById('car'); sel.innerHTML = '<option value="">— wybierz —</option>' + cars.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel = document.getElementById('exp-worker'); sel.innerHTML = '<option value="">Wszyscy</option>' + workers.map(w => `<option value="${w}">${w}</option>`).join('');
+  sel = document.getElementById('exp-contract'); sel.innerHTML = '<option value="">Wszystkie</option>' + contracts.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
 // ======================= INICJALIZACJA =======================
@@ -360,7 +410,6 @@ function initMap() {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
 }
 
-// ======================= CZAS + GEO =======================
 function setTime(id) {
   const now = new Date();
   times[id] = now;
@@ -368,6 +417,7 @@ function setTime(id) {
   timeEl.textContent = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   timeEl.classList.add('set');
   getGeo(id);
+  saveDraft();   // ← automatycznie zapisuje stan
 }
 
 function clearTime(id) {
@@ -378,52 +428,39 @@ function clearTime(id) {
   if (timeEl) { timeEl.textContent = '—'; timeEl.classList.remove('set'); }
   if (geoEl) { geoEl.textContent = '—'; geoEl.className = 'geo-pill'; }
   if (markers[id]) { map.removeLayer(markers[id]); delete markers[id]; }
+  saveDraft();
 }
 
 function getGeo(id) {
   const geoPill = document.getElementById(id + '-geo');
-  if (!navigator.geolocation) {
-    geoPill.textContent = 'Brak GPS'; geoPill.className = 'geo-pill err'; return;
-  }
+  if (!navigator.geolocation) { geoPill.textContent = 'Brak GPS'; geoPill.className = 'geo-pill err'; return; }
   navigator.geolocation.getCurrentPosition(pos => {
     geos[id] = [pos.coords.latitude, pos.coords.longitude];
     geoPill.textContent = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
     geoPill.className = 'geo-pill ok';
-
     if (markers[id]) map.removeLayer(markers[id]);
     const tb = timeBlocks.find(t => t.id === id);
-    markers[id] = L.circleMarker(geos[id], {color: tb.color, radius: 8})
-      .addTo(map)
-      .bindPopup(tb.label);
+    markers[id] = L.circleMarker(geos[id], {color: tb.color, radius: 8}).addTo(map).bindPopup(tb.label);
     map.setView(geos[id], 15);
-  }, () => {
-    geoPill.textContent = 'Błąd lokalizacji'; geoPill.className = 'geo-pill err';
-  });
+    saveDraft();
+  }, () => { geoPill.textContent = 'Błąd lokalizacji'; geoPill.className = 'geo-pill err'; });
 }
 
 // ======================= PASAŻEROWIE =======================
 function renderPassengerChips() {
   const cont = document.getElementById('pchips');
-  cont.innerHTML = '';
-  if (workers.length === 0) {
-    cont.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0;">Dodaj pracowników w ustawieniach</div>';
-    return;
-  }
+  cont.innerHTML = workers.length ? '' : '<div style="color:var(--text3);font-size:13px;padding:12px 0;">Dodaj pracowników w ustawieniach</div>';
   workers.forEach(w => {
     const chip = document.createElement('div');
     chip.className = `chip ${selectedPassengers.includes(w) ? 'on' : ''}`;
     chip.textContent = w;
-    chip.onclick = () => togglePassenger(w);
+    chip.onclick = () => { togglePassenger(w); saveDraft(); };
     cont.appendChild(chip);
   });
 }
-
 function togglePassenger(w) {
-  if (selectedPassengers.includes(w)) {
-    selectedPassengers = selectedPassengers.filter(x => x !== w);
-  } else {
-    selectedPassengers.push(w);
-  }
+  if (selectedPassengers.includes(w)) selectedPassengers = selectedPassengers.filter(x => x !== w);
+  else selectedPassengers.push(w);
   renderPassengerChips();
 }
 
@@ -439,14 +476,12 @@ function saveRecord() {
     times: {},
     geos: {...geos}
   };
-  Object.keys(times).forEach(k => {
-    rec.times[k] = times[k] ? times[k].toISOString() : null;
-  });
+  Object.keys(times).forEach(k => rec.times[k] = times[k] ? times[k].toISOString() : null);
 
   records.push(rec);
-  saveToStorage();                    // ← bezpieczny zapis
-
-  alert('✅ Zapisano wpis! (czas + GEO zapisane)');
+  saveToStorage();
+  clearDraft();                     // ← po zapisaniu czyścimy draft
+  alert('✅ Zapisano wpis!');
   resetForm();
 }
 
@@ -454,11 +489,12 @@ function resetForm() {
   document.querySelectorAll('#page-form input, #page-form select').forEach(inp => inp.value = '');
   timeBlocks.forEach(tb => clearTime(tb.id));
   times = {}; geos = {}; selectedPassengers = [];
+  clearDraft();
   renderPassengerChips();
 }
 
-// ======================= USTAWIENIA =======================
-function renderWorkersList() {
+// ======================= USTAWIENIA (bez zmian) =======================
+function renderWorkersList() { /* ... kod identyczny jak wcześniej ... */ 
   const el = document.getElementById('workers-list');
   el.innerHTML = workers.length ? '' : '<p style="color:var(--text3);padding:20px 0;text-align:center;font-size:13px;">Brak pracowników</p>';
   workers.forEach((item, i) => {
@@ -468,7 +504,7 @@ function renderWorkersList() {
     el.appendChild(d);
   });
 }
-function renderCarsList() { /* analogicznie */ 
+function renderCarsList() { /* identycznie */ 
   const el = document.getElementById('cars-list');
   el.innerHTML = cars.length ? '' : '<p style="color:var(--text3);padding:20px 0;text-align:center;font-size:13px;">Brak pojazdów</p>';
   cars.forEach((item, i) => {
@@ -478,7 +514,7 @@ function renderCarsList() { /* analogicznie */
     el.appendChild(d);
   });
 }
-function renderContractsList() { /* analogicznie */ 
+function renderContractsList() { /* identycznie */ 
   const el = document.getElementById('contracts-list');
   el.innerHTML = contracts.length ? '' : '<p style="color:var(--text3);padding:20px 0;text-align:center;font-size:13px;">Brak kontraktów</p>';
   contracts.forEach((item, i) => {
@@ -488,62 +524,14 @@ function renderContractsList() { /* analogicznie */
     el.appendChild(d);
   });
 }
+function addWorker() { const val = document.getElementById('new-worker').value.trim(); if(!val) return; workers.push(val); saveToStorage(); populateSelects(); renderWorkersList(); document.getElementById('new-worker').value=''; renderPassengerChips(); }
+function deleteWorker(i) { if(confirm('Usunąć pracownika?')) { workers.splice(i,1); saveToStorage(); populateSelects(); renderWorkersList(); renderPassengerChips(); } }
+function addCar() { const val = document.getElementById('new-car').value.trim(); if(!val) return; cars.push(val); saveToStorage(); populateSelects(); renderCarsList(); document.getElementById('new-car').value=''; }
+function deleteCar(i) { if(confirm('Usunąć pojazd?')) { cars.splice(i,1); saveToStorage(); populateSelects(); renderCarsList(); } }
+function addContract() { const val = document.getElementById('new-contract').value.trim(); if(!val) return; contracts.push(val); saveToStorage(); populateSelects(); renderContractsList(); document.getElementById('new-contract').value=''; }
+function deleteContract(i) { if(confirm('Usunąć kontrakt?')) { contracts.splice(i,1); saveToStorage(); populateSelects(); renderContractsList(); } }
 
-function addWorker() {
-  const val = document.getElementById('new-worker').value.trim();
-  if (!val) return;
-  workers.push(val);
-  saveToStorage();
-  populateSelects();
-  renderWorkersList();
-  document.getElementById('new-worker').value = '';
-  renderPassengerChips();
-}
-function deleteWorker(i) {
-  if (confirm('Usunąć pracownika?')) {
-    workers.splice(i, 1);
-    saveToStorage();
-    populateSelects();
-    renderWorkersList();
-    renderPassengerChips();
-  }
-}
-function addCar() {
-  const val = document.getElementById('new-car').value.trim();
-  if (!val) return;
-  cars.push(val);
-  saveToStorage();
-  populateSelects();
-  renderCarsList();
-  document.getElementById('new-car').value = '';
-}
-function deleteCar(i) {
-  if (confirm('Usunąć pojazd?')) {
-    cars.splice(i, 1);
-    saveToStorage();
-    populateSelects();
-    renderCarsList();
-  }
-}
-function addContract() {
-  const val = document.getElementById('new-contract').value.trim();
-  if (!val) return;
-  contracts.push(val);
-  saveToStorage();
-  populateSelects();
-  renderContractsList();
-  document.getElementById('new-contract').value = '';
-}
-function deleteContract(i) {
-  if (confirm('Usunąć kontrakt?')) {
-    contracts.splice(i, 1);
-    saveToStorage();
-    populateSelects();
-    renderContractsList();
-  }
-}
-
-// ======================= STATYSTYKI I HISTORIA =======================
+// ======================= HISTORIA – CZASY W JEDNEJ KOLUMNIE =======================
 function loadStats() {
   let totalDrive = 0, totalWork = 0;
   records.forEach(rec => {
@@ -574,17 +562,22 @@ function loadRecords() {
     let html = `<div class="card-title">${rec.date} • ${rec.worker||'—'} / ${rec.contract||'—'}</div>`;
     html += `<p style="font-size:13px;margin-bottom:10px;"><strong>Kierowca:</strong> ${rec.driver||'—'} | <strong>Auto:</strong> ${rec.car||'—'}</p>`;
     if (rec.passengers?.length) html += `<p style="font-size:13px;margin-bottom:12px;"><strong>Pasażerowie:</strong> ${rec.passengers.join(', ')}</p>`;
-    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">`;
+
+    // === JEDNA KOLUMNA Z CZASAMI ===
+    html += `<div class="time-list">`;
     timeBlocks.forEach(tb => {
       const t = rec.times[tb.id];
       const timeStr = t ? new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—';
-      html += `<div style="background:var(--bg3);padding:8px 10px;border-radius:8px;text-align:center;"><small style="color:var(--text3);">${tb.label}</small><br><strong style="font-family:monospace;font-size:17px;">${timeStr}</strong></div>`;
+      html += `<div class="time-row"><span>${tb.label}</span><strong style="font-family:monospace;">${timeStr}</strong></div>`;
     });
     html += `</div>`;
+
+    // czas trwania
     html += `<div style="margin-top:14px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">`;
     if (parseFloat(dur.drive) > 0) html += `<div class="duration-badge" style="color:var(--cyan);">🚗 Dójazd: <strong>${dur.drive} godz.</strong></div>`;
     if (parseFloat(dur.work) > 0) html += `<div class="duration-badge" style="color:var(--green);">💼 Praca: <strong>${dur.work} godz.</strong></div>`;
     html += `</div>`;
+
     html += `<button onclick="deleteRecord(${idx});" class="btn-danger" style="margin-top:16px;">🗑 Usuń wpis</button>`;
     card.innerHTML = html;
     container.appendChild(card);
@@ -600,55 +593,31 @@ function deleteRecord(idx) {
   }
 }
 
-// ======================= EKSPORT / IMPORT =======================
-function updateExportInfo() {
-  document.getElementById('exp-count').textContent = `Wpisów do eksportu: ${records.length}`;
-}
-
-function exportExcel() {
+// ======================= EKSPORT / IMPORT (bez zmian) =======================
+function updateExportInfo() { document.getElementById('exp-count').textContent = `Wpisów do eksportu: ${records.length}`; }
+function exportExcel() { /* kod bez zmian – jak w poprzedniej wersji */ 
   if (!records.length) return alert('Brak danych');
-  let filtered = records;
-  // filtracja (prosta – możesz rozbudować)
   const ws = XLSX.utils.json_to_sheet(records.map(r => ({
-    Data: r.date,
-    Pracownik: r.worker || '',
-    Kontrakt: r.contract || '',
-    Kierowca: r.driver || '',
-    Pojazd: r.car || '',
-    Pasażerowie: r.passengers ? r.passengers.join(', ') : '',
-    ...Object.fromEntries(timeBlocks.map(tb => [tb.label, r.times[tb.id] ? new Date(r.times[tb.id]).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—']))
+    Data: r.date, Pracownik: r.worker||'', Kontrakt: r.contract||'', Kierowca: r.driver||'', Pojazd: r.car||'', Pasażerowie: r.passengers?r.passengers.join(', '):'',
+    ...Object.fromEntries(timeBlocks.map(tb => [tb.label, r.times[tb.id]?new Date(r.times[tb.id]).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—']))
   })));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Ewidencja");
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ewidencja");
   XLSX.writeFile(wb, `ewidencja_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-
-function exportJSON() {
-  if (!records.length) return alert('Brak danych');
-  const blob = new Blob([JSON.stringify(records, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `backup_ewidencja_${new Date().toISOString().slice(0,10)}.json`; a.click();
-  URL.revokeObjectURL(url);
-}
-
+function exportJSON() { if(!records.length) return alert('Brak danych'); const blob = new Blob([JSON.stringify(records,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`backup_ewidencja_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); }
 function importJSON() { document.getElementById('json-import').click(); }
-
 function handleImport(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  const file = e.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
     try {
       const imported = JSON.parse(ev.target.result);
-      if (Array.isArray(imported)) {
+      if(Array.isArray(imported)) {
         records = [...records, ...imported];
         saveToStorage();
         alert(`✅ Zaimportowano ${imported.length} wpisów!`);
         e.target.value = '';
-        if (document.getElementById('page-records').classList.contains('active')) {
-          loadRecords(); loadStats();
-        }
+        if(document.getElementById('page-records').classList.contains('active')) { loadRecords(); loadStats(); }
       }
     } catch(err) { alert('❌ Błąd pliku JSON'); }
   };
@@ -665,12 +634,10 @@ function showPage(p) {
   if (p === 'records') { loadRecords(); loadStats(); }
   else if (p === 'settings') { renderWorkersList(); renderCarsList(); renderContractsList(); }
   else if (p === 'export') { updateExportInfo(); }
-  else if (p === 'form') { renderPassengerChips(); }
+  else if (p === 'form') { loadDraft(); renderPassengerChips(); }   // ← wczytujemy draft przy wejściu na formularz
 }
 
-function navAction() {
-  alert('🔧 Akcja PRO – możesz tu dodać własne funkcje');
-}
+function navAction() { alert('🔧 Akcja PRO'); }
 
 // ======================= START =======================
 loadData();
@@ -685,9 +652,10 @@ const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().split('
 document.getElementById('exp-from').value = thirtyDaysAgo;
 document.getElementById('exp-to').value = today;
 
+loadDraft();           // ← automatycznie wczytuje ostatni niedokończony wpis
 renderPassengerChips();
 
-console.log('%c✅ Ewidencja PRO – w pełni działa (SecurityError naprawiony)', 'color:#22c55e;font-weight:600');
+console.log('%c✅ Ewidencja PRO – historia w jednej kolumnie + kontynuacja wpisu po zamknięciu przeglądarki', 'color:#22c55e;font-weight:600');
 </script>
 </body>
 </html>
