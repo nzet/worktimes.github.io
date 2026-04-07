@@ -531,7 +531,7 @@ select:focus, input[type=date]:focus { outline: none; border-color: var(--accent
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// ── STATE & CONSTS ─────────────────────────────
+// STATE & CONSTS
 const DB_KEY = 'wt_records';
 const CFG_KEY = 'wt_config';
 
@@ -542,9 +542,9 @@ const defaultConfig = {
   autoGps: true,
   confirmSave: false
 };
+
 let config = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {...defaultConfig};
 let records = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-
 const times = {d1:null,d2:null,w1:null,w2:null};
 const geoData = {d1:null,d2:null,w1:null,w2:null};
 const selPass = new Set();
@@ -553,7 +553,7 @@ const geoLabels = {d1:'Pocz. dojazdu',d2:'Kon. dojazdu',w1:'Pocz. pracy',w2:'Kon
 const order = ['d1','d2','w1','w2'];
 let map, markers = {}, currentPage = 'form', modalRecordId = null;
 
-// ── INIT ───────────────────────────────────────
+// INIT
 window.addEventListener('load', () => {
   document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
   initMap();
@@ -568,7 +568,7 @@ window.addEventListener('load', () => {
   setExportDefaultDates();
 });
 
-// ── MAP ────────────────────────────────────────
+// MAP
 function initMap() {
   map = L.map('map', {zoomControl:false, attributionControl:false}).setView([52.0,19.5], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
@@ -586,7 +586,7 @@ function updateMap(key, lat, lng) {
   else map.setView([lat,lng],14);
 }
 
-// ── TIME BUTTON LOGIC ──────────────────────────
+// TIME BUTTON LOGIC
 function buildTimeGrid() {
   const defs = [
     {key:'d1', label:'Początek dojazdu'},
@@ -606,15 +606,12 @@ function buildTimeGrid() {
     </div>`).join('');
   setActiveTimeButton();
 }
-
 function setActiveTimeButton() {
-  // Деактивувати всі
   order.forEach(k=>{
     document.getElementById('tbtn-'+k).disabled = true;
     document.getElementById('gbtn-'+k).disabled = true;
     document.getElementById('gpill-'+k).style.pointerEvents = 'none';
   });
-  // Знайти перший ще не поставлений час
   let next = order.find(k=>!times[k]);
   if(next) {
     document.getElementById('tbtn-'+next).disabled = false;
@@ -622,7 +619,6 @@ function setActiveTimeButton() {
     document.getElementById('gpill-'+next).style.pointerEvents = 'auto';
   }
 }
-
 function stamp(key) {
   const now = new Date();
   const t = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
@@ -633,7 +629,6 @@ function stamp(key) {
   if(config.autoGps) getGeo(key);
   setActiveTimeButton();
 }
-
 function getGeo(key) {
   if(document.getElementById('gbtn-'+key).disabled) return;
   if(!navigator.geolocation) { setPill(key,'GPS niedostępny','err'); return; }
@@ -645,14 +640,13 @@ function getGeo(key) {
     updateMap(key, lat, lng);
   }, ()=>setPill(key,'błąd GPS','err'), {timeout:12000, enableHighAccuracy:true});
 }
-
 function setPill(key, text, cls) {
   const el = document.getElementById('gpill-'+key);
   el.textContent = text;
   el.className = 'geo-pill' + (cls ? ' '+cls : '');
 }
 
-// ── SELECTS & CHIPS ────────────────────────────
+// SELECTS & CHIPS
 function populateSelects() {
   ['worker','driver'].forEach(id=>{
     const el = document.getElementById(id);
@@ -673,24 +667,24 @@ function populateSelects() {
     config.contracts.map(c=>`<option value="${c}">${c}</option>`).join('');
   contract.value = contv;
 }
-
 function populateChips() {
   document.getElementById('pchips').innerHTML = config.workers.map(w=>`
     <div class="chip ${selPass.has(w)?'on':''}" data-n="${w}" onclick="togglePass('${w}',this)">${w}</div>`).join('');
 }
-
 function togglePass(name, el) {
   selPass.has(name) ? selPass.delete(name) : selPass.add(name);
   el.classList.toggle('on', selPass.has(name));
 }
 
-// ── SAVE RECORD ────────────────────────────────
+// SAVE RECORD
 function saveRecord() {
   const worker = document.getElementById('worker').value;
   const contract = document.getElementById('contract').value;
   if(!worker||!contract) { showToast('Wybierz pracownika i kontrakt','error'); return; }
-  if(!times.d1&&!times.w1) { showToast('Zarejestruj co najmniej jeden czas','error'); return; }
-
+  // --- ГОЛОВНА ВИПРАВЛЕНА УМОВА:
+  if(!(times.d1 && times.d2) && !(times.w1 && times.w2)) {
+    showToast('Zarejestruj co najmniej jeden pełny czas (dojazd lub praca)','error'); return;
+  }
   const rec = {
     id: Date.now().toString(),
     date: document.getElementById('workdate').value,
@@ -706,7 +700,6 @@ function saveRecord() {
     commuteMin: minDiff(times.d1,times.d2),
     workMin: minDiff(times.w1,times.w2)
   };
-
   records.unshift(rec);
   saveRecords();
   showToast('Wpis zapisany ✓','success');
@@ -715,10 +708,8 @@ function saveRecord() {
   updateStats();
   document.getElementById('rec-count-setting').textContent = records.length;
 }
-
 function saveConfig() { localStorage.setItem(CFG_KEY, JSON.stringify(config)); }
 function saveRecords() { localStorage.setItem(DB_KEY, JSON.stringify(records)); }
-
 function resetForm() {
   ['d1','d2','w1','w2'].forEach(k=>{
     times[k]=null; geoData[k]=null;
@@ -739,11 +730,10 @@ function resetForm() {
   setActiveTimeButton();
 }
 
-// ── RECORDS PAGE, MODAL, SETTINGS, EXPORT, NAV, HELPERS ──
-// [Всі ці частини не змінились, беріть їх як у вас було — скрипт повністю сумісний]
-// ... (Не включаю весь код сюди для збереження місця у відповіді, але ваш скрипт працюватиме так само, якщо залишити інші функції як вони були.)
+// --- ВСІ ІНШІ ФУНКЦІЇ (renderRecords, updateStats, openRecordModal, ... належать до рекордів, статистики, імпорту/експорту, навігації) ---
+// --- Ви можете залишити їх такими, як вони у вас працюють, бо вони не залежать від логіки кнопок часу/маршруту ---
 
-// ── NAVIGATION ETC ──
+// Подальший код без змін:
 const navTitles = {form:'Nowy wpis', records:'Historia', export:'Eksport', settings:'Ustawienia'};
 const navSubs = {form:'Ewidencja czasu pracy', records:'Zapisane wpisy', export:'Pobierz dane', settings:'Konfiguracja'};
 function showPage(name) {
@@ -777,6 +767,8 @@ function showToast(msg, type='') {
   t.textContent = msg; t.className = 'toast show'+(type?' '+type:'');
   setTimeout(()=>t.className='toast', 2500);
 }
+
+// --- решта ваших існуючих функцій (renderRecords, updateStats, openRecordModal, ... інше) без змін! ---
 </script>
 </body>
 </html>
