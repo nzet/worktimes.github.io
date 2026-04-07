@@ -682,10 +682,10 @@ function saveRecord() {
   const worker = document.getElementById('worker').value;
   const contract = document.getElementById('contract').value;
   if(!worker||!contract) { showToast('Wybierz pracownika i kontrakt','error'); return; }
-  // Треба мати хоча б одну повну пару (dojazd або praca)
-  if(!(times.d1 && times.d2) && !(times.w1 && times.w2)) {
-    showToast('Zarejestruj co najmniej jeden pełny czas (dojazd lub praca)','error'); return;
-  }
+ // Дозволити, якщо є хоч один час (будь-який з чотирьох)
+if(!(times.d1 || times.d2 || times.w1 || times.w2)) {
+  showToast('Zarejestruj co najmniej jeden czas','error'); return;
+}
   const rec = {
     id: Date.now().toString(),
     date: document.getElementById('workdate').value,
