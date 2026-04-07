@@ -586,9 +586,9 @@ function restoreTimesFromStorage() {
 window.addEventListener('load', () => {
   document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
   initMap();
-  buildTimeGrid();
-  restoreTimesFromStorage();
-  setActiveTimeButton();
+  buildTimeGrid();              // створюємо кнопки
+  restoreTimesFromStorage();    // ставимо відновлені значення D1/D2/W1/W2
+  setActiveTimeButton();        // ТЕПЕР рахуємо, яка наступна кнопка має бути активна
   populateSelects();
   populateChips();
   renderSettingsLists();
