@@ -2,1115 +2,182 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ewidencja">
-<meta name="theme-color" content="#0f172a">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ewidencja czasu pracy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root {
-  --bg: #0f172a;
-  --bg2: #1e293b;
-  --bg3: #334155;
-  --surface: #1e293b;
-  --surface2: #263347;
-  --border: rgba(148,163,184,0.12);
-  --border2: rgba(148,163,184,0.22);
-  --text: #f1f5f9;
-  --text2: #94a3b8;
-  --text3: #64748b;
-  --accent: #3b82f6;
-  --accent2: #1d4ed8;
-  --green: #22c55e;
-  --amber: #f59e0b;
-  --cyan: #06b6d4;
-  --red: #ef4444;
-  --radius: 14px;
-  --radius-sm: 9px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bot: env(safe-area-inset-bottom, 0px);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; background: var(--bg); }
-body { font-family: 'DM Sans', sans-serif; color: var(--text); overscroll-behavior: none; }
-
-/* NAV */
-.nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(15,23,42,0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding-top: var(--safe-top);
-  border-bottom: 0.5px solid var(--border);
-}
-.nav-inner {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px;
-}
-.nav-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
-.nav-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
-.nav-right { display: flex; gap: 8px; }
-.nav-btn {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--bg3); border: none; color: var(--text2);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 16px; transition: background 0.15s;
-}
-.nav-btn:active { background: var(--accent); color: #fff; }
-
-/* TABS */
-.tab-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(15,23,42,0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid var(--border);
-  display: flex;
-  padding-bottom: var(--safe-bot);
-}
-.tab {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 10px 0 8px; cursor: pointer; gap: 3px;
-  color: var(--text3); transition: color 0.15s; font-size: 10px; font-weight: 500;
-  border: none; background: none;
-}
-.tab.active { color: var(--accent); }
-.tab-icon { font-size: 20px; line-height: 1; }
-
-/* PAGES */
-.page-wrap {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  overflow: hidden;
-}
-.page {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
-  display: none;
-}
-.page.active { display: block; }
-.page-content {
-  padding: 16px;
-}
-
-/* SCROLL PADDING for fixed top/bottom bars */
-.page-content { padding-top: calc(var(--safe-top) + 70px); padding-bottom: calc(var(--safe-bot) + 74px); }
-
-/* CARDS */
-.card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-}
-.card-title {
-  font-size: 10px; font-weight: 600; color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
-}
-
-/* FORM */
-.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-.field label { font-size: 12px; color: var(--text2); font-weight: 500; }
-select, input[type=date] {
-  width: 100%; padding: 11px 14px; font-size: 15px;
-  background: var(--bg3); border: 0.5px solid var(--border2);
-  border-radius: var(--radius-sm); color: var(--text);
-  font-family: 'DM Sans', sans-serif; appearance: none;
-  -webkit-appearance: none;
-}
-select:focus, input[type=date]:focus { outline: none; border-color: var(--accent); }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-/* CHIPS */
-.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.chip {
-  padding: 6px 12px; font-size: 13px;
-  border: 0.5px solid var(--border2); border-radius: 20px;
-  cursor: pointer; background: var(--bg3); color: var(--text2);
-  transition: all 0.12s; user-select: none; font-weight: 500;
-}
-.chip.on { background: rgba(59,130,246,0.2); border-color: var(--accent); color: var(--accent); }
-
-/* TIME BLOCKS */
-.time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.tblock {
-  background: var(--bg3); border-radius: var(--radius-sm);
-  border: 0.5px solid var(--border); padding: 12px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.tlabel { font-size: 11px; color: var(--text3); font-weight: 500; }
-.tvalue {
-  font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500;
-  color: var(--text3); letter-spacing: 1px; transition: color 0.2s;
-}
-.tvalue.set { color: var(--green); }
-.trow { display: flex; gap: 6px; }
-.tbtn {
-  flex: 1; padding: 8px 6px; font-size: 12px; font-weight: 600;
-  border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
-  background: var(--surface2); color: var(--text2); cursor: pointer;
-  transition: all 0.12s; font-family: 'DM Sans', sans-serif;
-}
-.tbtn:active { background: var(--accent); color: #fff; border-color: var(--accent); transform: scale(0.97); }
-.tbtn.done { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.4); color: var(--green); }
-.geo-pill {
-  font-size: 10px; padding: 3px 8px; border-radius: 10px;
-  background: var(--bg2); color: var(--text3); cursor: pointer;
-  border: 0.5px solid var(--border); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-  transition: all 0.12s;
-}
-.geo-pill.ok { background: rgba(34,197,94,0.12); color: var(--green); border-color: rgba(34,197,94,0.3); }
-.geo-pill.err { background: rgba(239,68,68,0.12); color: var(--red); border-color: rgba(239,68,68,0.3); }
-
-/* MAP */
-.map-wrap {
-  border-radius: var(--radius-sm); overflow: hidden; height: 200px;
-  margin-top: 10px; border: 0.5px solid var(--border);
-}
-#map { height: 100%; width: 100%; }
-.map-legend {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
-}
-.leg { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
-.leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-/* BUTTONS */
-.btn-primary {
-  width: 100%; padding: 15px; font-size: 16px; font-weight: 600;
-  border: none; border-radius: var(--radius); background: var(--accent);
-  color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  transition: all 0.15s; margin-bottom: 8px; letter-spacing: -0.2px;
-}
-.btn-primary:active { background: var(--accent2); transform: scale(0.98); }
-.btn-secondary {
-  width: 100%; padding: 13px; font-size: 14px; font-weight: 500;
-  border: 0.5px solid var(--border2); border-radius: var(--radius);
-  background: var(--surface); color: var(--text2); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: all 0.15s; margin-bottom: 8px;
-}
-.btn-secondary:active { background: var(--bg3); transform: scale(0.98); }
-.btn-danger {
-  width: 100%; padding: 13px; font-size: 14px; font-weight: 500;
-  border: 0.5px solid rgba(239,68,68,0.3); border-radius: var(--radius);
-  background: rgba(239,68,68,0.08); color: var(--red); cursor: pointer;
-  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-}
-.btn-danger:active { background: rgba(239,68,68,0.2); }
-
-/* RECORDS */
-.rec-item {
-  background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
-  cursor: pointer; transition: border-color 0.15s;
-}
-.rec-item:active { border-color: var(--border2); }
-.rec-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-.badge {
-  padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 600;
-}
-.badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
-.badge-green { background: rgba(34,197,94,0.12); color: #4ade80; }
-.badge-amber { background: rgba(245,158,11,0.12); color: #fbbf24; }
-.rec-times { display: flex; gap: 12px; flex-wrap: wrap; }
-.rec-time-item { font-size: 12px; color: var(--text2); }
-.rec-time-item b { color: var(--text); font-weight: 500; }
-.rec-date { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
-.no-records { text-align: center; padding: 48px 16px; color: var(--text3); }
-.no-records-icon { font-size: 48px; margin-bottom: 12px; }
-.no-records-text { font-size: 15px; }
-
-/* SETTINGS */
-.setting-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 0; border-bottom: 0.5px solid var(--border);
-}
-.setting-row:last-child { border-bottom: none; }
-.setting-label { font-size: 15px; color: var(--text); }
-.setting-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-
-/* TOGGLE */
-.toggle {
-  width: 48px; height: 28px; border-radius: 14px;
-  background: var(--bg3); border: none; cursor: pointer;
-  position: relative; transition: background 0.2s; flex-shrink: 0;
-}
-.toggle.on { background: var(--accent); }
-.toggle::after {
-  content: ''; position: absolute; top: 3px; left: 3px;
-  width: 22px; height: 22px; border-radius: 50%; background: #fff;
-  transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-.toggle.on::after { transform: translateX(20px); }
-
-/* INPUT SETTING */
-.input-sm {
-  background: var(--bg3); border: 0.5px solid var(--border2);
-  border-radius: var(--radius-sm); color: var(--text);
-  font-family: 'DM Sans', sans-serif; font-size: 14px;
-  padding: 7px 10px; width: 100%; margin-top: 6px;
-}
-.input-sm:focus { outline: none; border-color: var(--accent); }
-
-/* STAT CARDS */
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-.stat-card {
-  background: var(--surface); border: 0.5px solid var(--border);
-  border-radius: var(--radius); padding: 14px;
-}
-.stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
-.stat-value { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--text); }
-.stat-unit { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-/* MODAL */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.7); display: none; align-items: flex-end;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
-  width: 100%; padding: 20px 16px;
-  padding-bottom: calc(var(--safe-bot) + 20px);
-  animation: slideUp 0.25s ease;
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.modal-title { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
-.modal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--bg3); margin: 0 auto 16px; }
-
-/* TOAST */
-.toast {
-  position: fixed; bottom: calc(var(--safe-bot) + 80px); left: 16px; right: 16px;
-  background: var(--surface); border: 0.5px solid var(--border2);
-  border-radius: var(--radius-sm); padding: 12px 16px;
-  font-size: 14px; color: var(--text); z-index: 300;
-  transform: translateY(20px); opacity: 0; transition: all 0.25s;
-  pointer-events: none; text-align: center;
-}
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast.success { border-color: rgba(34,197,94,0.4); color: var(--green); }
-.toast.error { border-color: rgba(239,68,68,0.4); color: var(--red); }
-
-/* LIST ITEMS */
-.list-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 0.5px solid var(--border);
-}
-.list-item:last-child { border-bottom: none; }
-.list-item-text { font-size: 15px; color: var(--text); }
-.list-item-remove {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(239,68,68,0.1); border: none; color: var(--red);
-  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
-}
-
-/* SECTION TITLE */
-.section-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 10px; margin-top: 4px; }
-
-/* EXPORT ROW */
-.export-info { font-size: 13px; color: var(--text3); text-align: center; padding: 8px 0; }
+body{font-family:sans-serif;background:#0f172a;color:#fff;padding:15px}
+button{margin:5px;padding:10px}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav class="nav">
-  <div class="nav-inner">
-    <div>
-      <div class="nav-title" id="nav-title">Nowy wpis</div>
-      <div class="nav-sub" id="nav-sub">Ewidencja czasu pracy</div>
-    </div>
-    <div class="nav-right">
-      <button class="nav-btn" id="nav-action-btn" onclick="navAction()" title="Akcja">⋯</button>
-    </div>
-  </div>
-</nav>
+<h2>Ewidencja czasu pracy</h2>
 
-<!-- PAGES -->
-<div class="page-wrap">
+<select id="worker"></select>
+<select id="contract"></select>
 
-  <!-- PAGE: FORM -->
-  <div class="page active" id="page-form">
-    <div class="page-content">
+<br><br>
 
-      <div class="card">
-        <div class="card-title">Informacje podstawowe</div>
-        <div class="field">
-          <label>Pracownik</label>
-          <select id="worker"><option value="">— wybierz —</option></select>
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label>Kontrakt</label>
-            <select id="contract"><option value="">— wybierz —</option></select>
-          </div>
-          <div class="field">
-            <label>Data</label>
-            <input type="date" id="workdate">
-          </div>
-        </div>
-      </div>
+<button onclick="stamp('d1')">Start dojazdu</button>
+<button onclick="stamp('d2')">Koniec dojazdu</button>
+<button onclick="stamp('w1')">Start pracy</button>
+<button onclick="stamp('w2')">Koniec pracy</button>
 
-      <div class="card">
-        <div class="card-title">Transport</div>
-        <div class="grid2" style="margin-bottom:10px">
-          <div class="field">
-            <label>Kierowca</label>
-            <select id="driver"><option value="">— wybierz —</option></select>
-          </div>
-          <div class="field">
-            <label>Nr rejestracyjny</label>
-            <select id="car"><option value="">— wybierz —</option></select>
-          </div>
-        </div>
-        <div class="field">
-          <label>Pasażerowie</label>
-          <div class="chips" id="pchips"></div>
-        </div>
-      </div>
+<br><br>
 
-      <div class="card">
-        <div class="card-title">Czas i lokalizacja</div>
-        <div class="time-grid" id="time-grid">
-          <!-- rendered by JS -->
-        </div>
-        <div class="map-wrap">
-          <div id="map"></div>
-        </div>
-        <div class="map-legend">
-          <div class="leg"><div class="leg-dot" style="background:#3b82f6"></div>Pocz. dojazdu</div>
-          <div class="leg"><div class="leg-dot" style="background:#06b6d4"></div>Kon. dojazdu</div>
-          <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Pocz. pracy</div>
-          <div class="leg"><div class="leg-dot" style="background:#f59e0b"></div>Kon. pracy</div>
-        </div>
-      </div>
+<button onclick="saveRecord()">ZAPISZ</button>
 
-      <button class="btn-primary" onclick="saveRecord()">Zapisz wpis</button>
-      <button class="btn-secondary" onclick="resetForm()">Wyczyść formularz</button>
-
-    </div>
-  </div>
-
-  <!-- PAGE: RECORDS -->
-  <div class="page" id="page-records">
-    <div class="page-content">
-      <div class="stats-grid" id="stats-grid"></div>
-      <div class="section-title">Historia wpisów</div>
-      <div id="rec-list"></div>
-    </div>
-  </div>
-
-  <!-- PAGE: EXPORT -->
-  <div class="page" id="page-export">
-    <div class="page-content">
-      <div class="card">
-        <div class="card-title">Eksport danych</div>
-        <div class="field">
-          <label>Zakres dat</label>
-          <div class="grid2">
-            <input type="date" id="exp-from" style="margin:0">
-            <input type="date" id="exp-to" style="margin:0">
-          </div>
-        </div>
-        <div class="field" style="margin-top:8px">
-          <label>Pracownik (opcjonalnie)</label>
-          <select id="exp-worker"><option value="">Wszyscy</option></select>
-        </div>
-        <div class="field">
-          <label>Kontrakt (opcjonalnie)</label>
-          <select id="exp-contract"><option value="">Wszystkie</option></select>
-        </div>
-      </div>
-      <div class="export-info" id="exp-count">Wpisów do eksportu: —</div>
-      <button class="btn-primary" onclick="exportExcel()">📊 Eksportuj do Excel (.xlsx)</button>
-      <button class="btn-secondary" onclick="exportJSON()">💾 Kopia zapasowa (JSON)</button>
-      <button class="btn-secondary" onclick="importJSON()">📥 Wczytaj kopię (JSON)</button>
-      <input type="file" id="json-import" accept=".json" style="display:none" onchange="handleImport(event)">
-    </div>
-  </div>
-
-  <!-- PAGE: SETTINGS -->
-  <div class="page" id="page-settings">
-    <div class="page-content">
-
-      <div class="card">
-        <div class="card-title">Pracownicy</div>
-        <div id="workers-list"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input class="input-sm" id="new-worker" placeholder="Imię i nazwisko (inicjały)" style="flex:1;margin:0">
-          <button class="tbtn" style="flex-shrink:0;padding:8px 14px" onclick="addWorker()">Dodaj</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Pojazdy</div>
-        <div id="cars-list"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input class="input-sm" id="new-car" placeholder="Nr rejestracyjny" style="flex:1;margin:0">
-          <button class="tbtn" style="flex-shrink:0;padding:8px 14px" onclick="addCar()">Dodaj</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Kontrakty</div>
-        <div id="contracts-list"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input class="input-sm" id="new-contract" placeholder="Nazwa kontraktu / obiektu" style="flex:1;margin:0">
-          <button class="tbtn" style="flex-shrink:0;padding:8px 14px" onclick="addContract()">Dodaj</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Ustawienia aplikacji</div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">GPS przy znaczniku czasu</div>
-            <div class="setting-sub">Automatycznie pobiera lokalizację</div>
-          </div>
-          <button class="toggle on" id="toggle-gps" onclick="toggleSetting('autoGps',this)"></button>
-        </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Potwierdzenie przed zapisem</div>
-            <div class="setting-sub">Pyta przed zapisaniem wpisu</div>
-          </div>
-          <button class="toggle" id="toggle-confirm" onclick="toggleSetting('confirmSave',this)"></button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Dane</div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Wpisów w bazie</div>
-          </div>
-          <div style="font-size:17px;font-weight:600;color:var(--accent)" id="rec-count-setting">0</div>
-        </div>
-        <button class="btn-danger" onclick="clearAllRecords()">Usuń wszystkie wpisy</button>
-      </div>
-
-    </div>
-  </div>
-
-</div>
-
-<!-- TAB BAR -->
-<nav class="tab-bar">
-  <button class="tab active" id="tab-form" onclick="showPage('form')">
-    <span class="tab-icon">✏️</span>Nowy wpis
-  </button>
-  <button class="tab" id="tab-records" onclick="showPage('records')">
-    <span class="tab-icon">📋</span>Historia
-  </button>
-  <button class="tab" id="tab-export" onclick="showPage('export')">
-    <span class="tab-icon">📊</span>Eksport
-  </button>
-  <button class="tab" id="tab-settings" onclick="showPage('settings')">
-    <span class="tab-icon">⚙️</span>Ustawienia
-  </button>
-</nav>
-
-<!-- MODAL: Record detail -->
-<div class="modal-overlay" id="rec-modal" onclick="closeModal()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Szczegóły wpisu</div>
-    <div id="rec-modal-body"></div>
-    <button class="btn-secondary" style="margin-top:12px" onclick="closeModal()">Zamknij</button>
-    <button class="btn-danger" id="rec-modal-delete" onclick="deleteCurrentRecord()">Usuń wpis</button>
-  </div>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// STATE & CONSTS
+// =====================
+// KEYS
+// =====================
 const DB_KEY = 'wt_records';
-const CFG_KEY = 'wt_config';
-const TIMES_KEY = 'wt_times_state';
+const DRAFT_KEY = 'wt_active_draft';
 
-const defaultConfig = {
-  workers: ['Kowal O.W.','Melnyk I.R.','Szewczenko A.M.','Bondar T.S.','Łysenko D.P.','Poliszczuk W.G.'],
-  cars: ['AA 1234 KW','KA 5678 OW','WN 9012 MA','AM 3456 TR'],
-  contracts: ['Kontrakt nr 1 / Obiekt A','Kontrakt nr 2 / Obiekt B','Kontrakt nr 3 / Obiekt C','Kontrakt nr 4 / Obiekt D'],
-  autoGps: true,
-  confirmSave: false
-};
-
-let config = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {...defaultConfig};
+// =====================
+// STATE
+// =====================
 let records = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+let draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
 
-const times = {d1:null,d2:null,w1:null,w2:null};
-const geoData = {d1:null,d2:null,w1:null,w2:null};
-const selPass = new Set();
-const geoColors = {d1:'#3b82f6',d2:'#06b6d4',w1:'#22c55e',w2:'#f59e0b'};
-const geoLabels = {d1:'Pocz. dojazdu',d2:'Kon. dojazdu',w1:'Pocz. pracy',w2:'Kon. pracy'};
-const order = ['d1','d2','w1','w2'];
-
-let map, markers = {}, currentPage = 'form', modalRecordId = null;
-
-// persist / restore times
-function persistTimes() {
-  localStorage.setItem(TIMES_KEY, JSON.stringify(times));
-}
-function restoreTimesFromStorage() {
-  const raw = localStorage.getItem(TIMES_KEY);
-  if (!raw) return;
-  try {
-    const saved = JSON.parse(raw);
-    ['d1','d2','w1','w2'].forEach(k => {
-      if (saved[k]) {
-        times[k] = saved[k];
-        const el = document.getElementById('tv-'+k);
-        if (el) {
-          el.textContent = saved[k];
-          el.classList.add('set');
-        }
-        const btn = document.getElementById('tbtn-'+k);
-        if (btn) btn.classList.add('done');
-      }
-    });
-  } catch(e) {
-    console.error('Bad times state', e);
-  }
-}
-
+// =====================
 // INIT
-window.addEventListener('load', () => {
-  document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
-  initMap();
-  buildTimeGrid();              // створюємо кнопки
-  restoreTimesFromStorage();    // ставимо відновлені значення D1/D2/W1/W2
-  setActiveTimeButton();        // ТЕПЕР рахуємо, яка наступна кнопка має бути активна
-  populateSelects();
-  populateChips();
-  renderSettingsLists();
-  applySettingToggles();
-  renderRecords();
-  updateStats();
-  updateExportFilters();
-  setExportDefaultDates();
-  document.getElementById('rec-count-setting').textContent = records.length;
-});
-
-// MAP
-function initMap() {
-  map = L.map('map', {zoomControl:false, attributionControl:false}).setView([52.0,19.5], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-}
-function updateMap(key, lat, lng) {
-  if(markers[key]) map.removeLayer(markers[key]);
-  const icon = L.divIcon({
-    className:'',
-    html:`<div style="width:14px;height:14px;border-radius:50%;background:${geoColors[key]};border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>`,
-    iconSize:[14,14], iconAnchor:[7,7]
-  });
-  markers[key] = L.marker([lat,lng],{icon}).addTo(map).bindPopup(`<b>${geoLabels[key]}</b><br>${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-  const pts = Object.values(geoData).filter(Boolean).map(g=>[g.lat,g.lng]);
-  if(pts.length>1) map.fitBounds(pts,{padding:[30,30]});
-  else map.setView([lat,lng],14);
+// =====================
+if (!draft) {
+  draft = createDraft();
+  persistDraft();
 }
 
-// TIME BUTTON LOGIC
-function buildTimeGrid() {
-  const defs = [
-    {key:'d1', label:'Początek dojazdu'},
-    {key:'d2', label:'Koniec dojazdu'},
-    {key:'w1', label:'Początek pracy'},
-    {key:'w2', label:'Koniec pracy'},
-  ];
-  document.getElementById('time-grid').innerHTML = defs.map(d=>`
-    <div class="tblock">
-      <div class="tlabel">${d.label}</div>
-      <div class="tvalue" id="tv-${d.key}">--:--</div>
-      <div class="trow">
-        <button class="tbtn" id="tbtn-${d.key}" onclick="stamp('${d.key}')" disabled>Czas ⏱</button>
-        <button class="tbtn" id="gbtn-${d.key}" onclick="getGeo('${d.key}')" disabled>GPS 📍</button>
-      </div>
-      <div class="geo-pill" id="gpill-${d.key}" onclick="getGeo('${d.key}')" style="pointer-events:none;">brak lokalizacji</div>
-    </div>`).join('');
-}
-function setActiveTimeButton() {
-  order.forEach(k=>{
-    document.getElementById('tbtn-'+k).disabled = true;
-    document.getElementById('gbtn-'+k).disabled = true;
-    document.getElementById('gpill-'+k).style.pointerEvents = 'none';
-  });
-  let next = order.find(k=>!times[k]);
-  if(next) {
-    document.getElementById('tbtn-'+next).disabled = false;
-    document.getElementById('gbtn-'+next).disabled = false;
-    document.getElementById('gpill-'+next).style.pointerEvents = 'auto';
-  }
-}
-function stamp(key) {
-  const now = new Date();
-  const t = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  times[key] = t;
-  const el = document.getElementById('tv-'+key);
-  el.textContent = t; el.classList.add('set');
-  document.getElementById('tbtn-'+key).classList.add('done');
-  persistTimes();
-  if(config.autoGps) getGeo(key);
-  setActiveTimeButton();
-}
-function getGeo(key) {
-  if(document.getElementById('gbtn-'+key).disabled) return;
-  if(!navigator.geolocation) { setPill(key,'GPS niedostępny','err'); return; }
-  setPill(key,'ustalanie pozycji...','');
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const lat = pos.coords.latitude, lng = pos.coords.longitude;
-    geoData[key] = {lat, lng};
-    setPill(key, lat.toFixed(4)+', '+lng.toFixed(4), 'ok');
-    updateMap(key, lat, lng);
-  }, ()=>setPill(key,'błąd GPS','err'), {timeout:12000, enableHighAccuracy:true});
-}
-function setPill(key, text, cls) {
-  const el = document.getElementById('gpill-'+key);
-  el.textContent = text;
-  el.className = 'geo-pill' + (cls ? ' '+cls : '');
-}
+initSelects();
+restoreUI();
 
-// SELECTS & CHIPS
-function populateSelects() {
-  ['worker','driver'].forEach(id=>{
-    const el = document.getElementById(id);
-    const val = el.value;
-    el.innerHTML = '<option value="">— wybierz —</option>' +
-      config.workers.map(w=>`<option value="${w}">${w}</option>`).join('');
-    el.value = val;
-  });
-  const car = document.getElementById('car');
-  const cv = car.value;
-  car.innerHTML = '<option value="">— wybierz —</option>' +
-    config.cars.map(c=>`<option value="${c}">${c}</option>`).join('');
-  car.value = cv;
-
-  const contract = document.getElementById('contract');
-  const contv = contract.value;
-  contract.innerHTML = '<option value="">— wybierz —</option>' +
-    config.contracts.map(c=>`<option value="${c}">${c}</option>`).join('');
-  contract.value = contv;
-}
-function populateChips() {
-  document.getElementById('pchips').innerHTML = config.workers.map(w=>`
-    <div class="chip ${selPass.has(w)?'on':''}" data-n="${w}" onclick="togglePass('${w}',this)">${w}</div>`).join('');
-}
-function togglePass(name, el) {
-  selPass.has(name) ? selPass.delete(name) : selPass.add(name);
-  el.classList.toggle('on', selPass.has(name));
-}
-
-// SAVE RECORD
-function saveRecord() {
-  const worker = document.getElementById('worker').value;
-  const contract = document.getElementById('contract').value;
-  if(!worker||!contract) {
-    showToast('Wybierz pracownika i kontrakt','error');
-    return;
-  }
-  // є хоча б один час
-  if(!(times.d1 || times.d2 || times.w1 || times.w2)) {
-    showToast('Zarejestruj co najmniej jeden czas','error');
-    return;
-  }
-  const rec = {
+// =====================
+// CREATE DRAFT
+// =====================
+function createDraft() {
+  return {
     id: Date.now().toString(),
-    date: document.getElementById('workdate').value,
-    worker, contract,
-    driver: document.getElementById('driver').value,
-    car: document.getElementById('car').value,
-    passengers: [...selPass].join(', '),
-    td1:times.d1, td2:times.d2, tw1:times.w1, tw2:times.w2,
-    gd1: geoData.d1 ? {lat:geoData.d1.lat, lng:geoData.d1.lng} : null,
-    gd2: geoData.d2 ? {lat:geoData.d2.lat, lng:geoData.d2.lng} : null,
-    gw1: geoData.w1 ? {lat:geoData.w1.lat, lng:geoData.w1.lng} : null,
-    gw2: geoData.w2 ? {lat:geoData.w2.lat, lng:geoData.w2.lng} : null,
-    commuteMin: minDiff(times.d1,times.d2),
-    workMin: minDiff(times.w1,times.w2)
+    date: today(),
+    worker: '',
+    contract: '',
+    times: { d1:null,d2:null,w1:null,w2:null },
+    geo: { d1:null,d2:null,w1:null,w2:null }
   };
-  records.unshift(rec);
-  saveRecords();
-  showToast('Wpis zapisany ✓','success');
-  resetForm();
-  renderRecords();
-  updateStats();
-  document.getElementById('rec-count-setting').textContent = records.length;
 }
-function saveConfig() { localStorage.setItem(CFG_KEY, JSON.stringify(config)); }
-function saveRecords() { localStorage.setItem(DB_KEY, JSON.stringify(records)); }
-function resetForm() {
-  ['d1','d2','w1','w2'].forEach(k=>{
-    times[k]=null; geoData[k]=null;
-    const el = document.getElementById('tv-'+k);
-    if(el){el.textContent='--:--'; el.classList.remove('set');}
-    const btn = document.getElementById('tbtn-'+k);
-    if(btn) btn.classList.remove('done');
-    setPill(k,'brak lokalizacji','');
-    if(markers[k]){map.removeLayer(markers[k]);delete markers[k];}
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// =====================
+// PERSIST
+// =====================
+function persistDraft() {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  draft = createDraft();
+}
+
+function saveRecords() {
+  localStorage.setItem(DB_KEY, JSON.stringify(records));
+}
+
+// =====================
+// UI INIT
+// =====================
+function initSelects() {
+  const workers = ['Worker A','Worker B'];
+  const contracts = ['Contract A','Contract B'];
+
+  const w = document.getElementById('worker');
+  const c = document.getElementById('contract');
+
+  w.innerHTML = '<option value="">--worker--</option>' + workers.map(x=>`<option>${x}</option>`).join('');
+  c.innerHTML = '<option value="">--contract--</option>' + contracts.map(x=>`<option>${x}</option>`).join('');
+
+  w.onchange = () => { draft.worker = w.value; persistDraft(); };
+  c.onchange = () => { draft.contract = c.value; persistDraft(); };
+}
+
+function restoreUI() {
+  document.getElementById('worker').value = draft.worker;
+  document.getElementById('contract').value = draft.contract;
+}
+
+// =====================
+// TIME
+// =====================
+function stamp(key) {
+  const t = new Date().toTimeString().slice(0,5);
+  draft.times[key] = t;
+  persistDraft();
+  console.log('STAMP', key, t);
+}
+
+// =====================
+// GEO
+// =====================
+function getGeo(key) {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    draft.geo[key] = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    };
+    persistDraft();
   });
-  persistTimes();
-  selPass.clear();
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  document.getElementById('worker').value='';
-  document.getElementById('contract').value='';
-  document.getElementById('driver').value='';
-  document.getElementById('car').value='';
-  document.getElementById('workdate').value=new Date().toISOString().split('T')[0];
-  setActiveTimeButton();
 }
 
-// NAV / PAGES
-const navTitles = {form:'Nowy wpis', records:'Historia', export:'Eksport', settings:'Ustawienia'};
-const navSubs = {form:'Ewidencja czasu pracy', records:'Zapisane wpisy', export:'Pobierz dane', settings:'Konfiguracja'};
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('tab-'+name).classList.add('active');
-  document.getElementById('nav-title').textContent = navTitles[name];
-  document.getElementById('nav-sub').textContent = navSubs[name];
-  currentPage = name;
-  if(name==='records'){ renderRecords(); updateStats(); }
-  if(name==='export'){ updateExportFilters(); updateExpCount(); }
-  if(name==='settings'){ renderSettingsLists(); applySettingToggles(); }
-  if(name==='form' && map) setTimeout(()=>map.invalidateSize(),100);
-}
-function navAction() {
-  if(currentPage==='form') resetForm();
-  else if(currentPage==='records') renderRecords();
-}
-
-// UTILS
+// =====================
+// CALC
+// =====================
 function minDiff(t1,t2) {
   if(!t1||!t2) return null;
-  const [h1,m1]=t1.split(':').map(Number),[h2,m2]=t2.split(':').map(Number);
-  let d=(h2*60+m2)-(h1*60+m1); if(d<0)d+=1440; return d;
-}
-function fmtMin(m) {
-  if(m===null||m===undefined) return '—';
-  return (m>=60?Math.floor(m/60)+'g ':'')+m%60+'min';
-}
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show'+(type?' '+type:'');
-  setTimeout(()=>t.className='toast', 2500);
+  const [h1,m1]=t1.split(':').map(Number);
+  const [h2,m2]=t2.split(':').map(Number);
+  let d=(h2*60+m2)-(h1*60+m1);
+  if(d<0)d+=1440;
+  return d;
 }
 
-// RECORDS LIST & MODAL
-function renderRecords() {
-  const list = document.getElementById('rec-list');
-  if(!records.length) {
-    list.innerHTML = `
-      <div class="no-records">
-        <div class="no-records-icon">🗂️</div>
-        <div class="no-records-text">Brak zapisanych wpisów</div>
-      </div>`;
+// =====================
+// SAVE RECORD
+// =====================
+function saveRecord() {
+  if (!draft.worker || !draft.contract) {
+    alert('Wybierz pracownika i kontrakt');
     return;
   }
-  list.innerHTML = records.map(r=>{
-    return `
-      <div class="rec-item" onclick="openRecordModal('${r.id}')">
-        <div class="rec-date">${r.date} • ${r.worker}</div>
-        <div class="rec-badges">
-          <span class="badge badge-blue">${r.contract}</span>
-          ${r.car ? `<span class="badge badge-amber">${r.car}</span>` : ''}
-          ${(r.commuteMin ? `<span class="badge badge-green">Dojazd ${fmtMin(r.commuteMin)}</span>`:'')}
-          ${(r.workMin ? `<span class="badge badge-green">Praca ${fmtMin(r.workMin)}</span>`:'')}
-        </div>
-        <div class="rec-times">
-          ${r.td1 && r.td2 ? `<div class="rec-time-item">Dojazd: <b>${r.td1}</b> → <b>${r.td2}</b></div>` : ''}
-          ${r.tw1 && r.tw2 ? `<div class="rec-time-item">Praca: <b>${r.tw1}</b> → <b>${r.tw2}</b></div>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-}
-function openRecordModal(id) {
-  const rec = records.find(r=>r.id===id);
-  if(!rec) return;
-  modalRecordId = id;
-  const body = document.getElementById('rec-modal-body');
-  body.innerHTML = `
-    <div class="section-title">Informacje podstawowe</div>
-    <div class="list-item"><div class="list-item-text">Data</div><div>${rec.date}</div></div>
-    <div class="list-item"><div class="list-item-text">Pracownik</div><div>${rec.worker}</div></div>
-    <div class="list-item"><div class="list-item-text">Kontrakt</div><div>${rec.contract}</div></div>
-    <div class="section-title">Transport</div>
-    <div class="list-item"><div class="list-item-text">Kierowca</div><div>${rec.driver||'—'}</div></div>
-    <div class="list-item"><div class="list-item-text">Pojazd</div><div>${rec.car||'—'}</div></div>
-    <div class="list-item"><div class="list-item-text">Pasażerowie</div><div>${rec.passengers||'—'}</div></div>
-    <div class="section-title">Czas</div>
-    <div class="list-item"><div class="list-item-text">Dojazd</div><div>${rec.td1&&rec.td2?rec.td1+' → '+rec.td2:'—'}</div></div>
-    <div class="list-item"><div class="list-item-text">Praca</div><div>${rec.tw1&&rec.tw2?rec.tw1+' → '+rec.tw2:'—'}</div></div>
-    <div class="list-item"><div class="list-item-text">Łącznie dojazd</div><div>${fmtMin(rec.commuteMin)}</div></div>
-    <div class="list-item"><div class="list-item-text">Łącznie praca</div><div>${fmtMin(rec.workMin)}</div></div>
-  `;
-  document.getElementById('rec-modal').classList.add('open');
-}
-function closeModal() {
-  document.getElementById('rec-modal').classList.remove('open');
-  modalRecordId = null;
-}
-function deleteCurrentRecord() {
-  if(!modalRecordId) return;
-  if(!confirm('Usunąć ten wpis?')) return;
-  records = records.filter(r=>r.id!==modalRecordId);
-  saveRecords();
-  document.getElementById('rec-count-setting').textContent = records.length;
-  closeModal();
-  renderRecords();
-  updateStats();
-}
 
-// STATS
-function updateStats() {
-  const wrap = document.getElementById('stats-grid');
-  if(!records.length) { wrap.innerHTML=''; return; }
-  let totalWork = 0, totalCommute = 0;
-  records.forEach(r=>{
-    if(r.workMin) totalWork += r.workMin;
-    if(r.commuteMin) totalCommute += r.commuteMin;
-  });
-  wrap.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Czas pracy</div>
-      <div class="stat-value">${fmtMin(totalWork)}</div>
-      <div class="stat-unit">Suma wszystkich wpisów</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Czas dojazdu</div>
-      <div class="stat-value">${fmtMin(totalCommute)}</div>
-      <div class="stat-unit">Suma wszystkich wpisów</div>
-    </div>`;
-}
-
-// SETTINGS LISTS
-function renderSettingsLists() {
-  const wlist = document.getElementById('workers-list');
-  wlist.innerHTML = config.workers.map(w=>`
-    <div class="list-item">
-      <div class="list-item-text">${w}</div>
-      <button class="list-item-remove" onclick="removeWorker('${w}')">×</button>
-    </div>`).join('') || '<div class="no-records-text">Brak pracowników</div>';
-
-  const clist = document.getElementById('cars-list');
-  clist.innerHTML = config.cars.map(c=>`
-    <div class="list-item">
-      <div class="list-item-text">${c}</div>
-      <button class="list-item-remove" onclick="removeCar('${c}')">×</button>
-    </div>`).join('') || '<div class="no-records-text">Brak pojazdów</div>';
-
-  const colist = document.getElementById('contracts-list');
-  colist.innerHTML = config.contracts.map(c=>`
-    <div class="list-item">
-      <div class="list-item-text">${c}</div>
-      <button class="list-item-remove" onclick="removeContract('${c}')">×</button>
-    </div>`).join('') || '<div class="no-records-text">Brak kontraktów</div>';
-}
-function addWorker() {
-  const val = document.getElementById('new-worker').value.trim();
-  if(!val) return;
-  if(!config.workers.includes(val)) {
-    config.workers.push(val);
-    saveConfig();
-    document.getElementById('new-worker').value='';
-    renderSettingsLists();
-    populateSelects();
-    populateChips();
-  }
-}
-function removeWorker(name) {
-  config.workers = config.workers.filter(w=>w!==name);
-  saveConfig();
-  renderSettingsLists();
-  populateSelects();
-  populateChips();
-}
-function addCar() {
-  const val = document.getElementById('new-car').value.trim();
-  if(!val) return;
-  if(!config.cars.includes(val)) {
-    config.cars.push(val);
-    saveConfig();
-    document.getElementById('new-car').value='';
-    renderSettingsLists();
-    populateSelects();
-  }
-}
-function removeCar(name) {
-  config.cars = config.cars.filter(c=>c!==name);
-  saveConfig();
-  renderSettingsLists();
-  populateSelects();
-}
-function addContract() {
-  const val = document.getElementById('new-contract').value.trim();
-  if(!val) return;
-  if(!config.contracts.includes(val)) {
-    config.contracts.push(val);
-    saveConfig();
-    document.getElementById('new-contract').value='';
-    renderSettingsLists();
-    populateSelects();
-  }
-}
-function removeContract(name) {
-  config.contracts = config.contracts.filter(c=>c!==name);
-  saveConfig();
-  renderSettingsLists();
-  populateSelects();
-}
-
-// SETTINGS TOGGLES
-function applySettingToggles() {
-  document.getElementById('toggle-gps').classList.toggle('on', !!config.autoGps);
-  document.getElementById('toggle-confirm').classList.toggle('on', !!config.confirmSave);
-}
-function toggleSetting(key, btn) {
-  config[key] = !config[key];
-  btn.classList.toggle('on', config[key]);
-  saveConfig();
-}
-
-// CLEAR ALL
-function clearAllRecords() {
-  if(!records.length) return;
-  if(!confirm('Usunąć wszystkie wpisy?')) return;
-  records = [];
-  saveRecords();
-  renderRecords();
-  updateStats();
-  document.getElementById('rec-count-setting').textContent = '0';
-}
-
-// EXPORT / IMPORT
-function setExportDefaultDates() {
-  if(!records.length) return;
-  const dates = records.map(r=>r.date).filter(Boolean).sort();
-  const from = dates[0], to = dates[dates.length-1];
-  document.getElementById('exp-from').value = from;
-  document.getElementById('exp-to').value = to;
-}
-function updateExportFilters() {
-  const wsel = document.getElementById('exp-worker');
-  const csel = document.getElementById('exp-contract');
-  const wVal = wsel.value, cVal = csel.value;
-  wsel.innerHTML = '<option value="">Wszyscy</option>' +
-    Array.from(new Set(config.workers)).map(w=>`<option value="${w}">${w}</option>`).join('');
-  csel.innerHTML = '<option value="">Wszystkie</option>' +
-    Array.from(new Set(config.contracts)).map(c=>`<option value="${c}">${c}</option>`).join('');
-  wsel.value = wVal;
-  csel.value = cVal;
-}
-function getFilteredRecordsForExport() {
-  const from = document.getElementById('exp-from').value;
-  const to = document.getElementById('exp-to').value;
-  const w = document.getElementById('exp-worker').value;
-  const c = document.getElementById('exp-contract').value;
-  return records.filter(r=>{
-    if(from && r.date < from) return false;
-    if(to && r.date > to) return false;
-    if(w && r.worker !== w) return false;
-    if(c && r.contract !== c) return false;
-    return true;
-  });
-}
-function updateExpCount() {
-  const filtered = getFilteredRecordsForExport();
-  document.getElementById('exp-count').textContent = 'Wpisów do eksportu: '+filtered.length;
-}
-document.getElementById('exp-from').addEventListener('change', updateExpCount);
-document.getElementById('exp-to').addEventListener('change', updateExpCount);
-document.getElementById('exp-worker').addEventListener('change', updateExpCount);
-document.getElementById('exp-contract').addEventListener('change', updateExpCount);
-
-function exportExcel() {
-  const rows = getFilteredRecordsForExport();
-  if(!rows.length) { showToast('Brak danych do eksportu','error'); return; }
-  const data = rows.map(r=>({
-    Data: r.date,
-    Pracownik: r.worker,
-    Kontrakt: r.contract,
-    Kierowca: r.driver || '',
-    Pojazd: r.car || '',
-    Pasażerowie: r.passengers || '',
-    'Początek dojazdu': r.td1 || '',
-    'Koniec dojazdu': r.td2 || '',
-    'Początek pracy': r.tw1 || '',
-    'Koniec pracy': r.tw2 || '',
-    'Minuty dojazdu': r.commuteMin ?? '',
-    'Minuty pracy': r.workMin ?? '',
-  }));
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Ewidencja");
-  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-  const blob = new Blob([wbout], {type:'application/octet-stream'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  const now = new Date().toISOString().split('T')[0];
-  a.download = `ewidencja_${now}.xlsx`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-  showToast('Eksport XLSX gotowy','success');
-}
-
-function exportJSON() {
-  const payload = {config, records};
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  const now = new Date().toISOString().split('T')[0];
-  a.download = `ewidencja_backup_${now}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
-  showToast('Kopia JSON zapisana','success');
-}
-
-function importJSON() {
-  document.getElementById('json-import').click();
-}
-function handleImport(e) {
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev=>{
-    try{
-      const obj = JSON.parse(ev.target.result);
-      if(obj.config) config = obj.config;
-      if(Array.isArray(obj.records)) records = obj.records;
-      saveConfig();
-      saveRecords();
-      populateSelects();
-      populateChips();
-      renderSettingsLists();
-      applySettingToggles();
-      renderRecords();
-      updateStats();
-      setExportDefaultDates();
-      updateExportFilters();
-      updateExpCount();
-      document.getElementById('rec-count-setting').textContent = records.length;
-      showToast('Kopia JSON wczytana','success');
-    }catch(err){
-      console.error(err);
-      showToast('Błąd przy wczytywaniu JSON','error');
-    }
-    e.target.value='';
+  const rec = {
+    ...draft,
+    commuteMin: minDiff(draft.times.d1, draft.times.d2),
+    workMin: minDiff(draft.times.w1, draft.times.w2)
   };
-  reader.readAsText(file);
+
+  records.unshift(rec);
+  saveRecords();
+
+  clearDraft();
+  persistDraft();
+
+  alert('Zapisano');
+  console.log(records);
 }
+
+// =====================
+// SERVICE WORKER
+// =====================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
 </script>
+
 </body>
 </html>
