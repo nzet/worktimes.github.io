@@ -534,6 +534,7 @@ select:focus, input[type=date]:focus { outline: none; border-color: var(--accent
 // STATE & CONSTS
 const DB_KEY = 'wt_records';
 const CFG_KEY = 'wt_config';
+const TIMES_KEY = 'wt_times_state';
 
 const defaultConfig = {
   workers: ['Kowal O.W.','Melnyk I.R.','Szewczenko A.M.','Bondar T.S.','Łysenko D.P.','Poliszczuk W.G.'],
@@ -545,19 +546,49 @@ const defaultConfig = {
 
 let config = JSON.parse(localStorage.getItem(CFG_KEY) || 'null') || {...defaultConfig};
 let records = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+
 const times = {d1:null,d2:null,w1:null,w2:null};
 const geoData = {d1:null,d2:null,w1:null,w2:null};
 const selPass = new Set();
 const geoColors = {d1:'#3b82f6',d2:'#06b6d4',w1:'#22c55e',w2:'#f59e0b'};
 const geoLabels = {d1:'Pocz. dojazdu',d2:'Kon. dojazdu',w1:'Pocz. pracy',w2:'Kon. pracy'};
 const order = ['d1','d2','w1','w2'];
+
 let map, markers = {}, currentPage = 'form', modalRecordId = null;
+
+// persist / restore times
+function persistTimes() {
+  localStorage.setItem(TIMES_KEY, JSON.stringify(times));
+}
+function restoreTimesFromStorage() {
+  const raw = localStorage.getItem(TIMES_KEY);
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    ['d1','d2','w1','w2'].forEach(k => {
+      if (saved[k]) {
+        times[k] = saved[k];
+        const el = document.getElementById('tv-'+k);
+        if (el) {
+          el.textContent = saved[k];
+          el.classList.add('set');
+        }
+        const btn = document.getElementById('tbtn-'+k);
+        if (btn) btn.classList.add('done');
+      }
+    });
+  } catch(e) {
+    console.error('Bad times state', e);
+  }
+}
 
 // INIT
 window.addEventListener('load', () => {
   document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
   initMap();
   buildTimeGrid();
+  restoreTimesFromStorage();
+  setActiveTimeButton();
   populateSelects();
   populateChips();
   renderSettingsLists();
@@ -605,7 +636,6 @@ function buildTimeGrid() {
       </div>
       <div class="geo-pill" id="gpill-${d.key}" onclick="getGeo('${d.key}')" style="pointer-events:none;">brak lokalizacji</div>
     </div>`).join('');
-  setActiveTimeButton();
 }
 function setActiveTimeButton() {
   order.forEach(k=>{
@@ -627,6 +657,7 @@ function stamp(key) {
   const el = document.getElementById('tv-'+key);
   el.textContent = t; el.classList.add('set');
   document.getElementById('tbtn-'+key).classList.add('done');
+  persistTimes();
   if(config.autoGps) getGeo(key);
   setActiveTimeButton();
 }
@@ -682,16 +713,14 @@ function saveRecord() {
   const worker = document.getElementById('worker').value;
   const contract = document.getElementById('contract').value;
   if(!worker||!contract) {
-    showToast('Wybierz pracownika i kontrakt','error'); 
+    showToast('Wybierz pracownika i kontrakt','error');
     return;
   }
-
-  // Дозволити запис, якщо є хоч один час: d1, d2, w1 або w2
+  // є хоча б один час
   if(!(times.d1 || times.d2 || times.w1 || times.w2)) {
     showToast('Zarejestruj co najmniej jeden czas','error');
     return;
   }
-
   const rec = {
     id: Date.now().toString(),
     date: document.getElementById('workdate').value,
@@ -727,6 +756,7 @@ function resetForm() {
     setPill(k,'brak lokalizacji','');
     if(markers[k]){map.removeLayer(markers[k]);delete markers[k];}
   });
+  persistTimes();
   selPass.clear();
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
   document.getElementById('worker').value='';
@@ -863,7 +893,6 @@ function updateStats() {
 
 // SETTINGS LISTS
 function renderSettingsLists() {
-  // workers
   const wlist = document.getElementById('workers-list');
   wlist.innerHTML = config.workers.map(w=>`
     <div class="list-item">
@@ -871,7 +900,6 @@ function renderSettingsLists() {
       <button class="list-item-remove" onclick="removeWorker('${w}')">×</button>
     </div>`).join('') || '<div class="no-records-text">Brak pracowników</div>';
 
-  // cars
   const clist = document.getElementById('cars-list');
   clist.innerHTML = config.cars.map(c=>`
     <div class="list-item">
@@ -879,7 +907,6 @@ function renderSettingsLists() {
       <button class="list-item-remove" onclick="removeCar('${c}')">×</button>
     </div>`).join('') || '<div class="no-records-text">Brak pojazdów</div>';
 
-  // contracts
   const colist = document.getElementById('contracts-list');
   colist.innerHTML = config.contracts.map(c=>`
     <div class="list-item">
