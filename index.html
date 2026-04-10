@@ -36,8 +36,8 @@ body{overscroll-behavior:none;}
 .card-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
 .field label{font-size:12px;color:var(--text2);font-weight:500;}
-select,input[type=date],input[type=time]{width:100%;padding:11px 14px;font-size:15px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;appearance:none;-webkit-appearance:none;}
-select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-color:var(--accent);}
+select,input[type=date],input[type=time],input[type=text]{width:100%;padding:11px 14px;font-size:15px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;appearance:none;-webkit-appearance:none;}
+select:focus,input:focus{outline:none;border-color:var(--accent);}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
 .chip{padding:6px 12px;font-size:13px;border:0.5px solid var(--border2);border-radius:20px;cursor:pointer;background:var(--bg3);color:var(--text2);transition:all 0.12s;user-select:none;font-weight:500;}
@@ -50,7 +50,7 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
 .trow{display:flex;gap:6px;}
 .tbtn{flex:1;padding:8px 6px;font-size:12px;font-weight:600;border:0.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all 0.12s;font-family:'DM Sans',sans-serif;}
 .tbtn:active{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(0.97);}
-.geo-pill{font-size:10px;padding:3px 8px;border-radius:10px;background:var(--bg2);color:var(--text3);cursor:pointer;border:0.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:all 0.12s;}
+.geo-pill{font-size:10px;padding:3px 8px;border-radius:10px;background:var(--bg2);color:var(--text3);cursor:default;border:0.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;transition:all 0.12s;}
 .geo-pill.ok{background:rgba(34,197,94,0.12);color:var(--green);border-color:rgba(34,197,94,0.3);}
 .geo-pill.err{background:rgba(239,68,68,0.12);color:var(--red);border-color:rgba(239,68,68,0.3);}
 .map-wrap{border-radius:var(--radius-sm);overflow:hidden;height:200px;margin-top:10px;border:0.5px solid var(--border);}
@@ -62,17 +62,19 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
 .btn-primary:active{background:var(--accent2);transform:scale(0.98);}
 .btn-secondary{width:100%;padding:13px;font-size:14px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;margin-bottom:8px;}
 .btn-secondary:active{background:var(--bg3);transform:scale(0.98);}
-.btn-danger{width:100%;padding:13px;font-size:14px;font-weight:500;border:0.5px solid rgba(239,68,68,0.3);border-radius:var(--radius);background:rgba(239,68,68,0.08);color:var(--red);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.btn-danger{width:100%;padding:13px;font-size:14px;font-weight:500;border:0.5px solid rgba(239,68,68,0.3);border-radius:var(--radius);background:rgba(239,68,68,0.08);color:var(--red);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;margin-bottom:8px;}
 .btn-danger:active{background:rgba(239,68,68,0.2);}
 .section-title{font-size:14px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 12px 4px;}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px;}
-.input-sm{width:100%;padding:11px 14px;font-size:15px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;}
-.export-info{font-size:13px;color:var(--text3);background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;margin:16px 0;}
-.duration-badge{display:inline-flex;align-items:center;gap:6px;background:var(--bg3);padding:4px 10px;border-radius:9999px;font-size:13px;font-weight:600;}
-.storage-warning{background:#f59e0b;color:#0f172a;padding:10px 16px;border-radius:8px;font-size:13px;text-align:center;margin:8px 16px 0;display:none;}
-.time-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
-.time-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg3);border-radius:8px;font-size:14px;}
-.time-row span:first-child{font-weight:500;color:var(--text2);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--surface);padding:14px;border-radius:var(--radius);border:0.5px solid var(--border);}
+.stat-val{font-size:24px;font-weight:600;margin-bottom:4px;}
+.stat-label{font-size:11px;color:var(--text3);}
+.rec-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+.rec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.rec-date{font-weight:600;color:var(--cyan);}
+.rec-body{font-size:13px;color:var(--text2);line-height:1.5;}
+.settings-row{display:flex;gap:8px;margin-bottom:10px;}
+.settings-row input{flex:1;}
 </style>
 </head>
 <body>
@@ -88,8 +90,6 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
     </div>
   </div>
 </nav>
-
-<div id="storage-warning" class="storage-warning">⚠️ Tryb pamięci (dane nie zapisują się po odświeżeniu strony)</div>
 
 <div class="page-wrap">
   <!-- PAGE FORM -->
@@ -125,7 +125,7 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
         </div>
       </div>
 
-      <button class="btn-primary" onclick="saveRecord()">Zapisz wpis</button>
+      <button class="btn-primary" onclick="saveRecord()">💾 Zapisz wpis</button>
       <button class="btn-secondary" onclick="resetForm()">Wyczyść formularz</button>
     </div>
   </div>
@@ -139,13 +139,57 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
     </div>
   </div>
 
-  <!-- PAGE EXPORT + SETTINGS (повні, але скорочені для читабельності) -->
-  <div class="page" id="page-export"> ... (експорт) ... </div>
-  <div class="page" id="page-settings"> ... (налаштування) ... </div>
+  <!-- PAGE EXPORT -->
+  <div class="page" id="page-export">
+    <div class="page-content">
+      <div class="card">
+        <div class="card-title">Eksport danych</div>
+        <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">Pobierz wszystkie zapisane wpisy w formacie arkusza kalkulacyjnego.</p>
+        <button class="btn-primary" onclick="exportToXlsx()">📊 Eksportuj do XLSX</button>
+        <button class="btn-secondary" onclick="exportToCsv()">📄 Eksportuj do CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="page-content">
+      <div class="card">
+        <div class="card-title">Pracownicy</div>
+        <div class="settings-row">
+          <input type="text" id="new-worker" placeholder="Imię i nazwisko">
+          <button class="tbtn" style="flex:0; padding:11px 16px;" onclick="addSetting('workers', 'new-worker')">Dodaj</button>
+        </div>
+        <div id="list-workers" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Kontrakty</div>
+        <div class="settings-row">
+          <input type="text" id="new-contract" placeholder="Nazwa kontraktu">
+          <button class="tbtn" style="flex:0; padding:11px 16px;" onclick="addSetting('contracts', 'new-contract')">Dodaj</button>
+        </div>
+        <div id="list-contracts" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Samochody</div>
+        <div class="settings-row">
+          <input type="text" id="new-car" placeholder="Nr rejestracyjny">
+          <button class="tbtn" style="flex:0; padding:11px 16px;" onclick="addSetting('cars', 'new-car')">Dodaj</button>
+        </div>
+        <div id="list-cars" style="margin-top:10px;"></div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <button class="btn-danger" onclick="clearAllData()">🗑 Usuń wszystkie dane (Hard Reset)</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <nav class="tab-bar">
-  <button class="tab active" id="tab-form" onclick="showPage('form')"><span class="tab-icon">✏️</span>Nowy wpis</button>
+  <button class="tab active" id="tab-form" onclick="showPage('form')"><span class="tab-icon">✏️</span>Wpis</button>
   <button class="tab" id="tab-records" onclick="showPage('records')"><span class="tab-icon">📋</span>Historia</button>
   <button class="tab" id="tab-export" onclick="showPage('export')"><span class="tab-icon">📊</span>Eksport</button>
   <button class="tab" id="tab-settings" onclick="showPage('settings')"><span class="tab-icon">⚙️</span>Ustawienia</button>
@@ -155,10 +199,16 @@ select:focus,input[type=date]:focus,input[type=time]:focus{outline:none;border-c
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ======================= BEZPIECZNE STORAGE =======================
-const safeStorage = { getItem(k){try{return localStorage.getItem(k)}catch(e){return null}}, setItem(k,v){try{localStorage.setItem(k,v)}catch(e){}} };
+const safeStorage = {
+  getItem(k) { try { return localStorage.getItem(k) } catch(e) { return null } },
+  setItem(k,v) { try { localStorage.setItem(k,v) } catch(e) {} }
+};
 
 let times = {}, geos = {}, selectedPassengers = [];
-let workers = [], cars = [], contracts = [], records = [];
+let workers = JSON.parse(safeStorage.getItem('workers') || '[]');
+let cars = JSON.parse(safeStorage.getItem('cars') || '[]');
+let contracts = JSON.parse(safeStorage.getItem('contracts') || '[]');
+let records = JSON.parse(safeStorage.getItem('records') || '[]');
 let currentDraft = null;
 
 const timeBlocks = [
@@ -169,6 +219,22 @@ const timeBlocks = [
 ];
 
 let map, markers = {};
+
+// ======================= NAV & PAGES =======================
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.getElementById('tab-' + p).classList.add('active');
+  
+  if (p === 'records') { loadRecords(); loadStats(); }
+  if (p === 'settings') { renderSettings(); }
+  
+  // Прокрутка сторінки нагорі при перемиканні
+  document.getElementById('page-' + p).scrollTop = 0;
+}
+
+function navAction() { alert('Ewidencja czasu pracy PRO v1.0'); }
 
 // ======================= DRAFT =======================
 function saveDraft() {
@@ -188,16 +254,19 @@ function saveDraft() {
 
 function loadDraft() {
   const saved = safeStorage.getItem('currentDraft');
-  if (!saved) return;
+  if (!saved || saved === 'null') return;
   currentDraft = JSON.parse(saved);
+  
   document.getElementById('worker').value = currentDraft.worker || '';
   document.getElementById('contract').value = currentDraft.contract || '';
   document.getElementById('driver').value = currentDraft.driver || '';
   document.getElementById('car').value = currentDraft.car || '';
   document.getElementById('workdate').value = currentDraft.workdate || '';
+  
   selectedPassengers = currentDraft.passengers || [];
   times = {};
   geos = currentDraft.geos || {};
+  
   Object.keys(currentDraft.times || {}).forEach(k => {
     if (currentDraft.times[k]) {
       times[k] = new Date(currentDraft.times[k]);
@@ -208,6 +277,21 @@ function loadDraft() {
       }
     }
   });
+  
+  // Оновлюємо маркери на карті з чернетки
+  Object.keys(geos).forEach(k => {
+    const geoPill = document.getElementById(k + '-geo');
+    if(geoPill) {
+      geoPill.textContent = `${geos[k][0].toFixed(5)}, ${geos[k][1].toFixed(5)}`;
+      geoPill.className = 'geo-pill ok';
+    }
+    if (map) {
+      const tb = timeBlocks.find(t => t.id === k);
+      markers[k] = L.circleMarker(geos[k], {color: tb.color, radius: 8}).addTo(map).bindPopup(tb.label);
+      map.setView(geos[k], 13);
+    }
+  });
+
   renderPassengerChips();
 }
 
@@ -228,7 +312,7 @@ function initTimeBlocks() {
       <div class="tvalue" id="${tb.id}-time">—</div>
       <div class="trow">
         <button class="tbtn" onclick="setTime('${tb.id}')">⏱ Teraz + GEO</button>
-        <button class="tbtn" onclick="clearTime('${tb.id}')">✖️ Wyczyść</button>
+        <button class="tbtn" onclick="clearTime('${tb.id}')">✖</button>
       </div>
       <div class="geo-pill" id="${tb.id}-geo">—</div>`;
     grid.appendChild(div);
@@ -252,7 +336,7 @@ function clearTime(id) {
   const geoEl = document.getElementById(id + '-geo');
   if (timeEl) { timeEl.textContent = '—'; timeEl.classList.remove('set'); }
   if (geoEl) { geoEl.textContent = '—'; geoEl.className = 'geo-pill'; }
-  if (markers[id]) { map.removeLayer(markers[id]); delete markers[id]; }
+  if (map && markers[id]) { map.removeLayer(markers[id]); delete markers[id]; }
   saveDraft();
 }
 
@@ -267,22 +351,73 @@ function getGeo(id) {
     geos[id] = [pos.coords.latitude, pos.coords.longitude];
     geoPill.textContent = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
     geoPill.className = 'geo-pill ok';
-    if (markers[id]) map.removeLayer(markers[id]);
-    const tb = timeBlocks.find(t => t.id === id);
-    markers[id] = L.circleMarker(geos[id], {color: tb.color, radius: 8}).addTo(map).bindPopup(tb.label);
-    map.setView(geos[id], 15);
+    
+    if (map) {
+      if (markers[id]) map.removeLayer(markers[id]);
+      const tb = timeBlocks.find(t => t.id === id);
+      markers[id] = L.circleMarker(geos[id], {color: tb.color, radius: 8}).addTo(map).bindPopup(tb.label);
+      map.setView(geos[id], 15);
+    }
     saveDraft();
   }, () => {
     geoPill.textContent = 'Błąd lokalizacji';
     geoPill.className = 'geo-pill err';
+  }, { enableHighAccuracy: true });
+}
+
+// ======================= PASSENGERS =======================
+function renderPassengerChips() {
+  const container = document.getElementById('pchips');
+  container.innerHTML = '';
+  workers.forEach(w => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (selectedPassengers.includes(w) ? ' on' : '');
+    chip.textContent = w;
+    chip.onclick = () => togglePassenger(w);
+    container.appendChild(chip);
   });
 }
 
-// ======================= SAVE RECORD (оновлює за датою) =======================
+function togglePassenger(w) {
+  if (selectedPassengers.includes(w)) {
+    selectedPassengers = selectedPassengers.filter(p => p !== w);
+  } else {
+    selectedPassengers.push(w);
+  }
+  renderPassengerChips();
+  saveDraft();
+}
+
+// ======================= CALCULATIONS =======================
+function calculateDurations(rec) {
+  const t = rec.times;
+  let driveMins = null, workMins = null;
+  if (t.start_drive && t.end_drive) {
+    driveMins = Math.round((new Date(t.end_drive) - new Date(t.start_drive)) / 60000);
+  }
+  if (t.start_work && t.end_work) {
+    workMins = Math.round((new Date(t.end_work) - new Date(t.start_work)) / 60000);
+  }
+  return { driveMins, workMins };
+}
+
+function formatMins(m) {
+  if (m === null) return '—';
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${h}h ${min < 10 ? '0' + min : min}m`;
+}
+
+// ======================= SAVE RECORD =======================
 function saveRecord() {
+  const workerVal = document.getElementById('worker').value;
+  const dateVal = document.getElementById('workdate').value || new Date().toISOString().split('T')[0];
+  
+  if (!workerVal) { alert('Wybierz pracownika!'); return; }
+
   const rec = {
-    date: document.getElementById('workdate').value || new Date().toISOString().split('T')[0],
-    worker: document.getElementById('worker').value,
+    date: dateVal,
+    worker: workerVal,
     contract: document.getElementById('contract').value,
     driver: document.getElementById('driver').value,
     car: document.getElementById('car').value,
@@ -292,21 +427,21 @@ function saveRecord() {
   };
   Object.keys(times).forEach(k => rec.times[k] = times[k] ? times[k].toISOString() : null);
 
-  const index = records.findIndex(r => r.date === rec.date);
+  // Перевірка: чи є вже запис за цим днем і цим працівником?
+  const index = records.findIndex(r => r.date === rec.date && r.worker === rec.worker);
 
   if (index > -1) {
     const existing = records[index];
     Object.assign(existing.times, rec.times);
     Object.assign(existing.geos, rec.geos);
-    existing.worker = rec.worker;
     existing.contract = rec.contract;
     existing.driver = rec.driver;
     existing.car = rec.car;
     if (rec.passengers.length) existing.passengers = [...new Set([...(existing.passengers || []), ...rec.passengers])];
-    alert('✅ Оновлено запис за цією датою');
+    alert('✅ Zaktualizowano wpis z tego dnia dla tego pracownika');
   } else {
     records.push(rec);
-    alert('✅ Створено новий запис');
+    alert('✅ Zapisano nowy wpis');
   }
 
   safeStorage.setItem('records', JSON.stringify(records));
@@ -314,19 +449,225 @@ function saveRecord() {
   resetForm();
 }
 
-// ======================= ІНШІ ФУНКЦІЇ (повні) =======================
-function calculateDurations(rec) { /* ... як раніше ... */ }
-function loadStats() { /* ... як раніше ... */ }
-function loadRecords() { /* ... як раніше ... */ }
-function resetForm() { /* ... як раніше ... */ }
-function renderPassengerChips() { /* ... як раніше ... */ }
-function togglePassenger(w) { /* ... як раніше ... */ }
-function showPage(p) { /* ... з прокруткою до верху ... */ }
-function navAction() { alert('Wersja PRO'); }
+// ======================= STATS & RECORDS LIST =======================
+function loadStats() {
+  let totalDrive = 0, totalWork = 0;
+  records.forEach(r => {
+    const d = calculateDurations(r);
+    if (d.driveMins) totalDrive += d.driveMins;
+    if (d.workMins) totalWork += d.workMins;
+  });
+  
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-val" style="color:var(--cyan)">${records.length}</div><div class="stat-label">Wpisów łącznie</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${formatMins(totalDrive)}</div><div class="stat-label">Czas dojazdu</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--green)">${formatMins(totalWork)}</div><div class="stat-label">Czas pracy</div></div>
+  `;
+}
+
+function loadRecords() {
+  const list = document.getElementById('rec-list');
+  if (records.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;">Brak wpisów</div>';
+    return;
+  }
+  list.innerHTML = '';
+  // Сортування за датою (нові зверху)
+  const sorted = [...records].sort((a,b) => new Date(b.date) - new Date(a.date));
+  
+  sorted.forEach((r, idx) => {
+    const d = calculateDurations(r);
+    const origIdx = records.indexOf(r);
+    
+    const div = document.createElement('div');
+    div.className = 'rec-card';
+    div.innerHTML = `
+      <div class="rec-header">
+        <div class="rec-date">${r.date}</div>
+        <button class="tbtn" style="flex:0; padding:4px 8px; color:var(--red); border-color:rgba(239,68,68,0.3);" onclick="deleteRecord(${origIdx})">✖</button>
+      </div>
+      <div class="rec-body">
+        <strong>👷 ${r.worker}</strong> ${r.contract ? '('+r.contract+')' : ''}<br>
+        ${r.driver ? '🚗 Kierowca: '+r.driver+' '+r.car : ''} ${r.passengers && r.passengers.length ? '| Pasażerowie: '+r.passengers.join(', ') : ''}<br>
+        <span style="color:var(--cyan)">Dojazd: ${formatMins(d.driveMins)}</span> | <span style="color:var(--green)">Praca: ${formatMins(d.workMins)}</span>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function deleteRecord(idx) {
+  if (confirm('Usunąć ten wpis?')) {
+    records.splice(idx, 1);
+    safeStorage.setItem('records', JSON.stringify(records));
+    loadRecords();
+    loadStats();
+  }
+}
+
+// ======================= SETTINGS =======================
+function populateSelects() {
+  ['worker', 'driver'].forEach(id => {
+    const sel = document.getElementById(id);
+    const val = sel.value;
+    sel.innerHTML = '<option value="">— wybierz —</option>';
+    workers.forEach(w => sel.innerHTML += `<option value="${w}">${w}</option>`);
+    sel.value = val;
+  });
+  
+  const cSel = document.getElementById('contract');
+  const cVal = cSel.value;
+  cSel.innerHTML = '<option value="">— wybierz —</option>';
+  contracts.forEach(c => cSel.innerHTML += `<option value="${c}">${c}</option>`);
+  cSel.value = cVal;
+
+  const carSel = document.getElementById('car');
+  const carVal = carSel.value;
+  carSel.innerHTML = '<option value="">— wybierz —</option>';
+  cars.forEach(c => carSel.innerHTML += `<option value="${c}">${c}</option>`);
+  carSel.value = carVal;
+}
+
+function addSetting(type, inputId) {
+  const input = document.getElementById(inputId);
+  const val = input.value.trim();
+  if (!val) return;
+  
+  if (type === 'workers' && !workers.includes(val)) workers.push(val);
+  if (type === 'contracts' && !contracts.includes(val)) contracts.push(val);
+  if (type === 'cars' && !cars.includes(val)) cars.push(val);
+  
+  safeStorage.setItem(type, JSON.stringify(eval(type))); // Зберігаємо масив
+  input.value = '';
+  populateSelects();
+  renderSettings();
+  if (type === 'workers') renderPassengerChips();
+}
+
+function removeSetting(type, val) {
+  if (type === 'workers') workers = workers.filter(x => x !== val);
+  if (type === 'contracts') contracts = contracts.filter(x => x !== val);
+  if (type === 'cars') cars = cars.filter(x => x !== val);
+  
+  safeStorage.setItem(type, JSON.stringify(eval(type)));
+  populateSelects();
+  renderSettings();
+  if (type === 'workers') renderPassengerChips();
+}
+
+function renderSettings() {
+  ['workers', 'contracts', 'cars'].forEach(type => {
+    const list = document.getElementById('list-' + type);
+    const arr = eval(type);
+    if (arr.length === 0) {
+      list.innerHTML = '<div style="font-size:12px;color:var(--text3)">Brak danych</div>';
+      return;
+    }
+    list.innerHTML = '';
+    arr.forEach(val => {
+      list.innerHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);">
+        <span style="font-size:14px">${val}</span>
+        <button class="tbtn" style="flex:0;padding:4px 8px;color:var(--red)" onclick="removeSetting('${type}','${val}')">✖</button>
+      </div>`;
+    });
+  });
+}
+
+function clearAllData() {
+  if (confirm('Uwaga! To usunie WSZYSTKIE wpisy, pracowników i ustawienia. Kontynuować?')) {
+    localStorage.clear();
+    workers = []; cars = []; contracts = []; records = [];
+    populateSelects();
+    renderSettings();
+    loadRecords();
+    loadStats();
+  }
+}
+
+// ======================= EXPORT =======================
+function exportToXlsx() {
+  if (records.length === 0) { alert('Brak danych do eksportu'); return; }
+  const data = records.map(r => {
+    const d = calculateDurations(r);
+    return {
+      'Data': r.date,
+      'Pracownik': r.worker,
+      'Kontrakt': r.contract,
+      'Kierowca': r.driver,
+      'Samochód': r.car,
+      'Pasażerowie': (r.passengers || []).join(', '),
+      'Start dojazdu': r.times.start_drive ? new Date(r.times.start_drive).toLocaleTimeString() : '',
+      'Koniec dojazdu': r.times.end_drive ? new Date(r.times.end_drive).toLocaleTimeString() : '',
+      'Czas dojazdu': formatMins(d.driveMins),
+      'Start pracy': r.times.start_work ? new Date(r.times.start_work).toLocaleTimeString() : '',
+      'Koniec pracy': r.times.end_work ? new Date(r.times.end_work).toLocaleTimeString() : '',
+      'Czas pracy': formatMins(d.workMins)
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Ewidencja");
+  XLSX.writeFile(wb, `ewidencja_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function exportToCsv() {
+  if (records.length === 0) { alert('Brak danych do eksportu'); return; }
+  let csv = "Data,Pracownik,Kontrakt,Kierowca,Samochod,Pasazerowie,Start_dojazdu,Koniec_dojazdu,Czas_dojazdu,Start_pracy,Koniec_pracy,Czas_pracy\n";
+  records.forEach(r => {
+    const d = calculateDurations(r);
+    csv += `${r.date},${r.worker},${r.contract},${r.driver},${r.car},"${(r.passengers||[]).join('; ')}",${r.times.start_drive ? new Date(r.times.start_drive).toLocaleTimeString() : ''},${r.times.end_drive ? new Date(r.times.end_drive).toLocaleTimeString() : ''},${formatMins(d.driveMins)},${r.times.start_work ? new Date(r.times.start_work).toLocaleTimeString() : ''},${r.times.end_work ? new Date(r.times.end_work).toLocaleTimeString() : ''},${formatMins(d.workMins)}\n`;
+  });
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `ewidencja_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+}
+
+// ======================= RESET FORM =======================
+function resetForm() {
+  document.getElementById('worker').value = '';
+  document.getElementById('contract').value = '';
+  document.getElementById('driver').value = '';
+  document.getElementById('car').value = '';
+  document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
+  
+  times = {};
+  geos = {};
+  selectedPassengers = [];
+  
+  // Очистка карти
+  if (map) {
+    Object.keys(markers).forEach(k => map.removeLayer(markers[k]));
+  }
+  markers = {};
+  if(map) map.setView([52.0, 19.0], 5); // Центр Польщі
+  
+  initTimeBlocks();
+  renderPassengerChips();
+  clearDraft();
+}
 
 // ======================= INIT =======================
 window.onload = () => {
-  // loadData, populateSelects, initTimeBlocks, initMap, loadDraft, renderPassengerChips...
+  // Встановлюємо сьогоднішню дату
+  document.getElementById('workdate').value = new Date().toISOString().split('T')[0];
+  
+  // Заповнюємо випадаючі списки
+  populateSelects();
+  
+  // Ініціалізуємо блоки часу
+  initTimeBlocks();
+  
+  // Ініціалізуємо карту
+  map = L.map('map').setView([52.0, 19.0], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  
+  // Відновлюємо чернетку
+  loadDraft();
+  renderPassengerChips();
+  
   console.log('%c✅ Ewidencja PRO – всі блоки + гео + логіка працюють!', 'color:#22c55e;font-weight:600');
 };
 </script>
